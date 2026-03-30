@@ -1,0 +1,14 @@
+{
+  "cameras": [
+    {
+      "name": "Salon",
+      "type": "Tapo",
+      "url_template": "rtsp://{RTSP_USER}:{RTSP_PASS}@192.168.1.153:554/stream2"
+    },
+    {
+      "name": "Entrada",
+      "type": "ESP32",
+      "url": "http://192.168.1.156:81/stream"
+    }
+  ]
+}
