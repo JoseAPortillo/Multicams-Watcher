@@ -17,9 +17,11 @@ def require_env(name: str) -> str:
 
 def load_camera_config(config_path: str) -> Dict[str, Any]:
     """Load camera configuration from JSON file."""
-    with open(config_path, "r", encoding="utf-8") as f:
-        return json.load(f)
-
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        raise RuntimeError(f"Camera configuration file not found: {config_path}")
 
 def get_env_values() -> Dict[str, str]:
     """Get all required environment values for URL templating."""

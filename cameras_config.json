@@ -9,6 +9,11 @@
       "name": "Entrada",
       "type": "ESP32",
       "url": "http://192.168.1.137:81/stream"
+    },
+      {
+      "name": "pasillo",
+      "type": "ESP32",
+      "url": "http://192.168.1.141:81/stream"
     }
   ]
 }

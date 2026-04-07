@@ -3,6 +3,7 @@ Display and UI rendering for multi-camera monitoring.
 Handles mosaic view, fullscreen, and touch interactions.
 """
 import cv2
+import math
 import numpy as np
 from constants import ANCHO_PI, ALTO_PI, FRAME_SIZE
 
@@ -40,29 +41,53 @@ def render_mosaic(cameras: list) -> np.ndarray:
     if not cameras:
         return np.zeros((ALTO_PI, ANCHO_PI, 3), np.uint8)
 
-    width_per_cam = ANCHO_PI // len(cameras)
-    frames_list = []
-    
-    for s in cameras:
-        frame = s.process_frame()
+    total_cameras = len(cameras)
+    cols = math.ceil(math.sqrt(total_cameras))
+    rows = math.ceil(total_cameras / cols)
+
+    tile_width = ANCHO_PI // cols
+    tile_height = ALTO_PI // rows
+    tiles = []
+
+    for camera in cameras:
+        frame = camera.process_frame()
         if frame is None:
-            tile = build_offline_tile(s, width_per_cam, ALTO_PI)
+            tile = build_offline_tile(camera, tile_width, tile_height)
         else:
-            tile = cv2.resize(frame, (width_per_cam, ALTO_PI))
-        frames_list.append(tile)
+            tile = cv2.resize(frame, (tile_width, tile_height))
+        tiles.append(tile)
 
-    return np.hstack(frames_list)
+    total_cells = rows * cols
+    while len(tiles) < total_cells:
+        tiles.append(np.zeros((tile_height, tile_width, 3), np.uint8))
+
+    row_images = []
+    for row_index in range(rows):
+        start = row_index * cols
+        end = start + cols
+        row_images.append(np.hstack(tiles[start:end]))
+
+    return np.vstack(row_images)
 
 
-def camera_index_from_mosaic_point(x: int, cameras: list) -> int or None:
+def camera_index_from_mosaic_point(x: int, y: int, cameras: list) -> int or None:
     """Get camera index from mosaic touch point."""
     if not cameras:
         return None
-    width_per_cam = ANCHO_PI // len(cameras)
-    if width_per_cam <= 0:
+
+    total_cameras = len(cameras)
+    cols = math.ceil(math.sqrt(total_cameras))
+    rows = math.ceil(total_cameras / cols)
+    tile_width = ANCHO_PI // cols
+    tile_height = ALTO_PI // rows
+
+    if tile_width <= 0 or tile_height <= 0:
         return None
-    idx = x // width_per_cam
-    return idx if 0 <= idx < len(cameras) else None
+
+    col = x // tile_width
+    row = y // tile_height
+    idx = row * cols + col
+    return idx if 0 <= idx < total_cameras else None
 
 
 class TouchManager:
@@ -73,10 +98,10 @@ class TouchManager:
         self.init_point_touch = None
         #self.led_on = False  # For ESP32 LED toggle state   
 
-    def handle_double_click(self, x: int, streams: list):
+    def handle_double_click(self, x: int, y: int, streams: list):
         """Toggle between mosaic and fullscreen."""
         if self.max_camera is None:
-            idx = camera_index_from_mosaic_point(x, streams)
+            idx = camera_index_from_mosaic_point(x, y, streams)
             if idx is not None:
                 self.max_camera = streams[idx]
                 print(f"Maximizando: {self.max_camera.nombre}")
@@ -114,7 +139,7 @@ class TouchManager:
         """OpenCV mouse callback for touch events."""
         # 1. DOBLE CLICK / TAP: Maximizar o Volver al Mosaico
         if event == cv2.EVENT_LBUTTONDBLCLK:
-            self.handle_double_click(x, param["streams"])
+            self.handle_double_click(x, y, param["streams"])
             return
 
         # 2. MOVIMIENTO (Swipe): Control PTZ
