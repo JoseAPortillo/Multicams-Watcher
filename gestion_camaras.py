@@ -20,6 +20,7 @@ import socket
 import tempfile
 import threading
 import time
+from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
@@ -171,23 +172,96 @@ class DetectionService:
 
     def __init__(
         self,
-        skip_frames: int = 4,
-        ia_interval: float = 0.3,
+        skip_frames: int = 6,
+        ia_interval: float = 0.6,
         face_model_path: str = "face_detector.task",
         pose_model_path: str = "pose_landmarker.task",
+        min_face_confidence: float = 0.8,
+        min_face_size: int = 40,
+        history_size: int = 5,
+        min_positive_frames: int = 3,
     ):
         self.skip_frames = skip_frames
         self.ia_interval = ia_interval
         self.frame_count = 0
         self.last_ia_time = 0.0
+        self.min_face_confidence = min_face_confidence
+        self.min_face_size = min_face_size
+        self.history = deque(maxlen=history_size)
+        self.min_positive_frames = min_positive_frames
 
         base_options_face = python.BaseOptions(model_asset_path=face_model_path)
-        options_face = vision.FaceDetectorOptions(base_options=base_options_face)
+        options_face = vision.FaceDetectorOptions(
+            base_options=base_options_face,
+            min_detection_confidence=min_face_confidence,
+            min_suppression_threshold=0.5,
+        )
         self.face_detector = vision.FaceDetector.create_from_options(options_face)
 
         base_options_pose = python.BaseOptions(model_asset_path=pose_model_path)
-        options_pose = vision.PoseLandmarkerOptions(base_options=base_options_pose)
+        options_pose = vision.PoseLandmarkerOptions(
+            base_options=base_options_pose,
+            num_poses=1,
+            min_pose_detection_confidence=0.7,
+            min_pose_presence_confidence=0.7,
+            min_tracking_confidence=0.7,
+        )
         self.pose_detector = vision.PoseLandmarker.create_from_options(options_pose)
+
+    def _is_face_valid(self, bbox, frame_width: int, frame_height: int) -> bool:
+        x = bbox.origin_x
+        y = bbox.origin_y
+        w = bbox.width
+        h = bbox.height
+
+        if w < self.min_face_size or h < self.min_face_size:
+            return False
+
+        if x <= 5 or y <= 5:
+            return False
+
+        if x + w >= frame_width - 5 or y + h >= frame_height - 5:
+            return False
+
+        aspect_ratio = w / float(h)
+        if aspect_ratio < 0.6 or aspect_ratio > 1.6:
+            return False
+
+        return w * h >= 1600
+
+    def _get_valid_faces(self, face_result, frame):
+        frame_height, frame_width = frame.shape[:2]
+        valid_boxes = []
+
+        for det in face_result.detections:
+            score = det.categories[0].score if det.categories else 0.0
+            bbox = det.bounding_box
+
+            if score < self.min_face_confidence:
+                continue
+
+            if not self._is_face_valid(bbox, frame_width, frame_height):
+                continue
+
+            valid_boxes.append((bbox, score))
+
+        return valid_boxes
+
+    def _has_supporting_pose(self, pose_result) -> bool:
+        if not pose_result.pose_landmarks:
+            return False
+
+        landmarks = pose_result.pose_landmarks[0]
+        visible = 0
+
+        for lm in landmarks:
+            if 0.0 <= lm.x <= 1.0 and 0.0 <= lm.y <= 1.0:
+                visible += 1
+
+        return visible >= 8
+
+    def _is_persistent_detection(self) -> bool:
+        return sum(self.history) >= self.min_positive_frames
 
     def annotate(self, frame):
         """Annotates a frame and reports whether anything relevant was detected.
@@ -209,27 +283,48 @@ class DetectionService:
             image_format=mp.ImageFormat.SRGB,
             data=cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
         )
-        active_detection = False
-
         face_result = self.face_detector.detect(mp_image)
-        if face_result.detections:
-            active_detection = True
-            for det in face_result.detections:
-                bbox = det.bounding_box
-                cv2.rectangle(
-                    frame,
-                    (bbox.origin_x, bbox.origin_y),
-                    (bbox.origin_x + bbox.width, bbox.origin_y + bbox.height),
-                    (255, 0, 0),
-                    2,
-                )
+        valid_faces = self._get_valid_faces(face_result, frame)
 
         pose_result = self.pose_detector.detect(mp_image)
-        if pose_result.pose_landmarks:
-            active_detection = True
+        pose_support = self._has_supporting_pose(pose_result)
+
+        current_detection = len(valid_faces) > 0
+        self.history.append(current_detection)
+        active_detection = self._is_persistent_detection()
+
+        for bbox, score in valid_faces:
+            cv2.rectangle(
+                frame,
+                (bbox.origin_x, bbox.origin_y),
+                (bbox.origin_x + bbox.width, bbox.origin_y + bbox.height),
+                (255, 0, 0),
+                2,
+            )
+            cv2.putText(
+                frame,
+                f"Face {score:.2f}",
+                (bbox.origin_x, max(20, bbox.origin_y - 8)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (255, 0, 0),
+                1,
+            )
+
+        if pose_support:
             landmark = pose_result.pose_landmarks[0][0]
             cx, cy = int(landmark.x * 640), int(landmark.y * 480)
             cv2.circle(frame, (cx, cy), 10, (0, 255, 0), -1)
+
+        cv2.putText(
+            frame,
+            f"Presence: {'ON' if active_detection else 'OFF'}",
+            (20, 35),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.8,
+            (0, 255, 0) if active_detection else (0, 0, 255),
+            2,
+        )
 
         self.last_ia_time = now
         return frame, active_detection

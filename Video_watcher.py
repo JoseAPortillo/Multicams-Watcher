@@ -10,7 +10,7 @@ import camera_config
 import display
 import telegram_cmds
 import health_monitor
-import GestionCamaras
+import gestion_camaras
 from constants import WINDOW_NAME
 
 CONFIG_DIR = Path(__file__).resolve().parent
@@ -50,7 +50,7 @@ def build_streams(env_vars: dict):
             env_vars["TOKEN_TG"],
             env_vars["CHAT_ID_TG"],
             camera_env_values,
-            GestionCamaras.GestionCamara,
+            gestion_camaras.GestionCamara,
             tapo_user=env_vars.get("TAPO_USER"),
             tapo_pass=env_vars.get("TAPO_PASS"),
         )
