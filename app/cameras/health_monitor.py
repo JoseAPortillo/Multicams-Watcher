@@ -2,6 +2,7 @@
 Camera health monitoring and status notifications.
 Runs in background thread.
 """
+import threading
 import time
 import telepot
 
@@ -16,6 +17,7 @@ def monitor_cameras_health(streams: list, bot: telepot.Bot, chat_id_tg: str, int
         chat_id_tg: Telegram chat ID for notifications
         interval: Check interval in seconds (default: 2)
     """
+    
     while True:
         for cam in streams:
             try:
@@ -38,3 +40,13 @@ def monitor_cameras_health(streams: list, bot: telepot.Bot, chat_id_tg: str, int
                 print(f"Health monitor error ({cam.nombre}): {e}")
         
         time.sleep(interval)
+
+
+def start_health_monitor_thread(streams: list, bot: telepot.Bot, chat_id_tg: str, interval: int = 2):
+    thread = threading.Thread(
+        target=monitor_cameras_health,
+        args=(streams, bot, chat_id_tg, interval),
+        daemon=True,
+    )
+    thread.start()
+    return thread

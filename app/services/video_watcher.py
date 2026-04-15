@@ -1,4 +1,4 @@
-﻿import cv2
+import cv2
 import time
 import threading
 from pathlib import Path
@@ -6,38 +6,48 @@ from pathlib import Path
 import telepot
 from telepot.loop import MessageLoop
 
-import camera_config
-import display
-import telegram_cmds
-import health_monitor
-import gestion_camaras
-from constants import WINDOW_NAME
-
-CONFIG_DIR = Path(__file__).resolve().parent
-CREDENTIALS_FILE = CONFIG_DIR / "credentials.env"
-CAMERAS_CONFIG_FILE = CONFIG_DIR / "cameras_config.json"
+from app.cameras import camera_config, gestion_camaras, health_monitor
+from app.cameras.simulated_cameras import build_simulated_streams
+from app.core.constants import WINDOW_NAME
+from app.core.settings import CAMERAS_CONFIG_FILE, CREDENTIALS_FILE
+from app.services import display, telegram_cmds
 
 
-def load_credentials(env_path: Path):
+def load_credentials(env_path: Path, require_telegram: bool = True, require_rtsp: bool = True):
     values = {}
-    with env_path.open("r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            if "=" not in line:
-                continue
-            key, val = line.split("=", 1)
-            values[key.strip()] = val.strip().strip('"').strip("'")
+    if env_path.exists():
+        with env_path.open("r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" not in line:
+                    continue
+                key, val = line.split("=", 1)
+                values[key.strip()] = val.strip().strip('"').strip("'")
+    elif require_rtsp or require_telegram:
+        raise RuntimeError(f"Missing credentials file: {env_path}")
 
-    required = ["RTSP_USER", "RTSP_PASS", "TOKEN_TG", "CHAT_ID_TG"]
+    required = []
+    if require_rtsp:
+        required.extend(["RTSP_USER", "RTSP_PASS"])
+    if require_telegram:
+        required.extend(["TOKEN_TG", "CHAT_ID_TG"])
     missing = [key for key in required if not values.get(key)]
     if missing:
         raise RuntimeError(f"Missing required credentials in {env_path}: {', '.join(missing)}")
+
+    values.setdefault("RTSP_USER", "")
+    values.setdefault("RTSP_PASS", "")
+    values.setdefault("TOKEN_TG", "")
+    values.setdefault("CHAT_ID_TG", "")
     return values
 
 
-def build_streams(env_vars: dict):
+def build_streams(env_vars: dict, simulate: bool = False, simulated_count: int = 3):
+    if simulate:
+        return build_simulated_streams(count=simulated_count)
+
     camera_env_values = {
         "RTSP_USER": env_vars["RTSP_USER"],
         "RTSP_PASS": env_vars["RTSP_PASS"],
@@ -56,6 +66,16 @@ def build_streams(env_vars: dict):
         )
         for cam in cameras
     ]
+
+
+def bootstrap_system(require_telegram: bool = True, simulate: bool = False, simulated_count: int = 3):
+    env_vars = load_credentials(
+        CREDENTIALS_FILE,
+        require_telegram=require_telegram,
+        require_rtsp=not simulate,
+    )
+    streams = build_streams(env_vars, simulate=simulate, simulated_count=simulated_count)
+    return env_vars, streams
 
 
 def run_ui_loop(streams: list):
@@ -77,9 +97,8 @@ def run_ui_loop(streams: list):
 
 
 def main():
-    env_vars = load_credentials(CREDENTIALS_FILE)
+    env_vars, streams = bootstrap_system()
     bot = telepot.Bot(env_vars["TOKEN_TG"])
-    streams = build_streams(env_vars)
 
     MessageLoop(bot, lambda msg: telegram_cmds.handle_telegram_message(msg, bot, streams, env_vars["CHAT_ID_TG"])).run_as_thread()
     threading.Thread(

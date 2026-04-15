@@ -33,6 +33,8 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from pytapo import Tapo
 
+from app.core.settings import FACE_MODEL_FILE, POSE_MODEL_FILE
+
 
 @dataclass(frozen=True)
 class StreamEndpoint:
@@ -168,14 +170,24 @@ class TelegramAlertService:
         ).start()
 
 
+class NullTelegramAlertService:
+
+    def __init__(self):
+        self.cooldown = 0
+        self.last_alert = 0.0
+
+    def send_async(self, camera_name: str, alert_frame, now: float):
+        return
+
+
 class DetectionService:
 
     def __init__(
         self,
         skip_frames: int = 6,
         ia_interval: float = 0.6,
-        face_model_path: str = "face_detector.task",
-        pose_model_path: str = "pose_landmarker.task",
+        face_model_path: str = str(FACE_MODEL_FILE),
+        pose_model_path: str = str(POSE_MODEL_FILE),
         min_face_confidence: float = 0.8,
         min_face_size: int = 40,
         history_size: int = 5,
@@ -487,7 +499,10 @@ class GestionCamara:
         self.status_cooldown = 60
 
         self.stream_reader = StreamReader(url)
-        self.alert_service = TelegramAlertService(token_tg, chat_id_tg)
+        if token_tg and chat_id_tg:
+            self.alert_service = TelegramAlertService(token_tg, chat_id_tg)
+        else:
+            self.alert_service = NullTelegramAlertService()
         self.detection_service = DetectionService()
         self.ptz_controller = TapoController(
             camera_name=nombre,
@@ -564,7 +579,7 @@ class GestionCamara:
     def send_telegram_alert(self, alert_frame):
         self.alert_service.send_async(self.nombre, alert_frame, time.time())
 
-    def process_frame(self):
+    def get_processed_frame(self, send_alerts: bool = True):
         """Processes the latest frame and returns the annotated version.
 
         If the alarm is enabled and a presence is detected, it triggers an
@@ -575,11 +590,14 @@ class GestionCamara:
 
         frame, active_detection = self.detection_service.annotate(self.frame)
         now = time.time()
-        if self.alarm_enabled and active_detection:
+        if send_alerts and self.alarm_enabled and active_detection:
             self.alert_service.send_async(self.nombre, frame.copy(), now)
 
         cv2.putText(frame, self.nombre, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
         return frame
+
+    def process_frame(self):
+        return self.get_processed_frame(send_alerts=True)
 
     def check_health(self):
         stream_online = bool(self.ret and self.frame is not None)

@@ -1,0 +1,206 @@
+:root {
+  color-scheme: dark;
+  --bg: #0f1318;
+  --panel: #18202a;
+  --panel-2: #212c39;
+  --border: #314152;
+  --text: #eef4fb;
+  --muted: #94a6bb;
+  --accent: #4db6ac;
+  --danger: #ff6b6b;
+  --ok: #71d08c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at top, rgba(77, 182, 172, 0.12), transparent 30%),
+    linear-gradient(180deg, #0d1218, #121922 40%, #0c1117);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(12, 17, 23, 0.8);
+  backdrop-filter: blur(10px);
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.75rem;
+}
+
+.topbar h1,
+.panel h2 {
+  margin: 0;
+}
+
+.system-health {
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(77, 182, 172, 0.12);
+  border: 1px solid rgba(77, 182, 172, 0.3);
+  color: var(--accent);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(360px, 1.1fr);
+  gap: 20px;
+  padding: 20px;
+}
+
+.panel {
+  background: rgba(24, 32, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  padding: 18px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+}
+
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.secondary {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.camera-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.camera-card {
+  display: grid;
+  gap: 10px;
+  background: var(--panel-2);
+  border: 1px solid transparent;
+  border-radius: 16px;
+  padding: 12px;
+  color: var(--text);
+  text-align: left;
+}
+
+.camera-card.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(77, 182, 172, 0.4);
+}
+
+.camera-card img,
+#viewer-image {
+  width: 100%;
+  border-radius: 14px;
+  display: block;
+  background: #091016;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.camera-name {
+  font-weight: 700;
+}
+
+.camera-type,
+.camera-status {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.camera-status.online,
+.pill.online {
+  color: var(--ok);
+}
+
+.camera-status.offline,
+.pill.offline {
+  color: var(--danger);
+}
+
+.viewer-stage {
+  min-height: 280px;
+  border-radius: 18px;
+  background: rgba(10, 16, 22, 0.9);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.viewer-empty {
+  color: var(--muted);
+  padding: 24px;
+  text-align: center;
+}
+
+.viewer-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.pill {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+.ptz-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.ptz-grid button {
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #2f7c74, #235f58);
+  color: white;
+  padding: 14px 10px;
+}
+
+.hidden {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

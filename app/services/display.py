@@ -5,7 +5,7 @@ Handles mosaic view, fullscreen, and touch interactions.
 import cv2
 import math
 import numpy as np
-from constants import ANCHO_PI, ALTO_PI, FRAME_SIZE
+from app.core.constants import ANCHO_PI, ALTO_PI, FRAME_SIZE
 
 
 BLACK_FRAME = np.zeros((FRAME_SIZE[1], FRAME_SIZE[0], 3), np.uint8)

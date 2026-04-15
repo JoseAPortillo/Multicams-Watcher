@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel de Camaras</title>
+  <link rel="stylesheet" href="/app/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Raspberry Control Center</p>
+      <h1>Panel de camaras</h1>
+    </div>
+    <div id="system-health" class="system-health">Cargando...</div>
+  </header>
+
+  <main class="layout">
+    <section class="panel">
+      <div class="panel-heading">
+        <h2>Camaras</h2>
+        <button id="refresh-btn" class="secondary">Actualizar</button>
+      </div>
+      <div id="camera-list" class="camera-grid"></div>
+    </section>
+
+    <section class="panel viewer">
+      <div class="panel-heading">
+        <h2 id="viewer-title">Selecciona una camara</h2>
+        <button id="toggle-alarm-btn" class="secondary" disabled>Alarma</button>
+      </div>
+
+      <div class="viewer-stage">
+        <img id="viewer-image" alt="Vista de camara" hidden>
+        <div id="viewer-empty" class="viewer-empty">Pulsa una camara para verla aqui.</div>
+      </div>
+
+      <div id="viewer-meta" class="viewer-meta"></div>
+
+      <div id="ptz-controls" class="ptz-grid hidden">
+        <button data-move="up">▲</button>
+        <button data-move="left">◀</button>
+        <button data-move="home" class="secondary">Stop</button>
+        <button data-move="right">▶</button>
+        <button data-move="down">▼</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app/app.js"></script>
+</body>
+</html>
