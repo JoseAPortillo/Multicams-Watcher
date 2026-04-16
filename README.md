@@ -217,6 +217,18 @@ En Windows PowerShell:
 .\.venv\Scripts\python.exe -m app.services.video_watcher
 ```
 
+Alternativa directa al archivo:
+
+```powershell
+.\.venv\Scripts\python.exe .\app\services\video_watcher.py
+```
+
+Tambien puedes usar el lanzador:
+
+```powershell
+scripts\run_video_watcher.bat
+```
+
 En Linux o macOS:
 
 ```bash
@@ -403,6 +415,12 @@ Lanzar servidor en modo simulacion:
 
 ```bash
 python run_web_server.py --pc-dev --simulate --sim-cameras 3
+```
+
+Lanzar la app local sin servidor web:
+
+```bash
+python -m app.services.video_watcher
 ```
 
 Ver IP de la Raspberry:
