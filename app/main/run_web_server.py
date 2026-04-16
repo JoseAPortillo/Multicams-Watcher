@@ -48,17 +48,17 @@ def main():
         os.environ["CONTROL_APP_SIM_CAMERA_COUNT"] = str(max(1, args.sim_cameras))
 
     local_ip = discover_local_ip()
-    print(f"Servidor web escuchando en http://127.0.0.1:{args.port}/")
-    print(f"Acceso desde la red local en http://{local_ip}:{args.port}/")
+    print(f"Server listening on http://127.0.0.1:{args.port}/")
+    print(f"Access from local network at http://{local_ip}:{args.port}/")
     if args.pc_dev:
-        print("Modo PC/dev activo: Telegram y monitor de salud desactivados.")
+        print("PC/dev mode active: Telegram and health monitor disabled.")
     if args.simulate:
-        print(f"Modo simulacion activo: {max(1, args.sim_cameras)} camaras simuladas.")
+        print(f"Simulation mode active: {max(1, args.sim_cameras)} simulated cameras.")
 
     try:
         import uvicorn
     except ModuleNotFoundError:
-        print("Falta la dependencia 'uvicorn'. Ejecuta: pip install -r requirements.txt")
+        print("Missing dependency 'uvicorn'. Run: pip install -r requirements.txt")
         raise
 
     uvicorn.run("app.web.server_api:app", host=args.host, port=args.port, reload=False)
