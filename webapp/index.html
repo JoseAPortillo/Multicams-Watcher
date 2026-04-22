@@ -27,7 +27,10 @@
     <section class="panel viewer">
       <div class="panel-heading">
         <h2 id="viewer-title">Selecciona una camara</h2>
-        <button id="toggle-alarm-btn" class="secondary" disabled>Alarma</button>
+        <div class="viewer-actions">
+          <button id="toggle-light-btn" class="secondary hidden" disabled>Luz</button>
+          <button id="toggle-alarm-btn" class="secondary" disabled>Alarma</button>
+        </div>
       </div>
 
       <div class="viewer-stage">
@@ -38,11 +41,11 @@
       <div id="viewer-meta" class="viewer-meta"></div>
 
       <div id="ptz-controls" class="ptz-grid hidden">
-        <button data-move="up">▲</button>
-        <button data-move="left">◀</button>
+        <button data-move="up">Arriba</button>
+        <button data-move="left">Izquierda</button>
         <button data-move="home" class="secondary">Stop</button>
-        <button data-move="right">▶</button>
-        <button data-move="down">▼</button>
+        <button data-move="right">Derecha</button>
+        <button data-move="down">Abajo</button>
       </div>
     </section>
   </main>

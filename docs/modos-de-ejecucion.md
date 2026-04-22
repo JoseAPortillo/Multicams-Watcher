@@ -44,7 +44,7 @@ En Linux o macOS:
 python run_web_server.py --pc-dev --simulate --sim-cameras 4
 ```
 
-El archivo [scripts/run_web_server_pc.bat](/d:/DEEP_CAVE_WORKS/CODE_WORKS/Control_tplink_c200/scripts/run_web_server_pc.bat) ya arranca por defecto en simulacion.
+El archivo [scripts/run_web_server_pc.bat](./Control_tplink_c200/scripts/run_web_server_pc.bat) ya arranca por defecto en simulacion.
 
 ## 3. Web en Raspberry Pi
 

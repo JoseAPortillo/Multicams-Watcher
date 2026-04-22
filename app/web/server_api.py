@@ -91,6 +91,8 @@ def list_cameras():
             "online": bool(cam.ret and cam.frame is not None),
             "alarm_enabled": cam.alarm_enabled,
             "ptz_enabled": cam.ptz_controller.enabled,
+            "light_enabled": getattr(cam, "light_enabled", False),
+            "light_on": getattr(cam, "light_is_on", False),
         }
         for idx, cam in enumerate(streams)
     ]
@@ -106,6 +108,8 @@ def get_camera_state(camera_id: int):
         "online": bool(cam.ret and cam.frame is not None),
         "alarm_enabled": cam.alarm_enabled,
         "ptz_enabled": cam.ptz_controller.enabled,
+        "light_enabled": getattr(cam, "light_enabled", False),
+        "light_on": getattr(cam, "light_is_on", False),
     }
 
 
@@ -128,6 +132,19 @@ def toggle_alarm(camera_id: int):
     cam = get_camera(camera_id)
     cam.alarm_enabled = not cam.alarm_enabled
     return {"id": camera_id, "alarm_enabled": cam.alarm_enabled}
+
+
+@app.post("/api/cameras/{camera_id}/light/toggle")
+def toggle_light(camera_id: int):
+    cam = get_camera(camera_id)
+    if not getattr(cam, "light_enabled", False):
+        raise HTTPException(status_code=400, detail="Light control not available for this camera")
+
+    ok = cam.toggle_light()
+    if not ok:
+        raise HTTPException(status_code=502, detail="Could not update ESP32 light state")
+
+    return {"id": camera_id, "light_on": getattr(cam, "light_is_on", False)}
 
 
 @app.post("/api/cameras/{camera_id}/move")

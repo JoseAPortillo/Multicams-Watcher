@@ -2,13 +2,16 @@
 Display and UI rendering for multi-camera monitoring.
 Handles mosaic view, fullscreen, and touch interactions.
 """
-import cv2
 import math
+
+import cv2
 import numpy as np
-from app.core.constants import ANCHO_PI, ALTO_PI, FRAME_SIZE
+
+from app.core.constants import ALTO_PI, ANCHO_PI, FRAME_SIZE
 
 
 BLACK_FRAME = np.zeros((FRAME_SIZE[1], FRAME_SIZE[0], 3), np.uint8)
+LIGHT_BUTTON_RECT = (ANCHO_PI - 180, 16, ANCHO_PI - 20, 64)
 
 
 def safe_frame(frame):
@@ -24,6 +27,28 @@ def build_offline_tile(camera, width: int, height: int) -> np.ndarray:
     return tile
 
 
+def point_in_rect(x: int, y: int, rect: tuple[int, int, int, int]) -> bool:
+    """Return True when a point is inside a rectangle."""
+    left, top, right, bottom = rect
+    return left <= x <= right and top <= y <= bottom
+
+
+def draw_light_button(canvas: np.ndarray, camera) -> None:
+    """Draw the ESP32 light toggle button on fullscreen view."""
+    if not getattr(camera, "light_enabled", False):
+        return
+
+    left, top, right, bottom = LIGHT_BUTTON_RECT
+    is_on = getattr(camera, "light_is_on", False)
+    bg_color = (70, 170, 255) if is_on else (70, 70, 70)
+    border_color = (210, 240, 255) if is_on else (180, 180, 180)
+    label = "LUZ ON" if is_on else "LUZ OFF"
+
+    cv2.rectangle(canvas, (left, top), (right, bottom), bg_color, -1)
+    cv2.rectangle(canvas, (left, top), (right, bottom), border_color, 2)
+    cv2.putText(canvas, label, (left + 20, top + 32), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
+
+
 def render_fullscreen(camera) -> np.ndarray:
     """Render single camera fullscreen with labels."""
     frame = camera.process_frame()
@@ -31,8 +56,8 @@ def render_fullscreen(camera) -> np.ndarray:
         canvas = build_offline_tile(camera, ANCHO_PI, ALTO_PI)
     else:
         canvas = cv2.resize(frame, (ANCHO_PI, ALTO_PI))
-    cv2.putText(canvas, f"CONTROL: {camera.nombre}", (20, 30),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+    cv2.putText(canvas, f"CONTROL: {camera.nombre}", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+    draw_light_button(canvas, camera)
     return canvas
 
 
@@ -70,7 +95,7 @@ def render_mosaic(cameras: list) -> np.ndarray:
     return np.vstack(row_images)
 
 
-def camera_index_from_mosaic_point(x: int, y: int, cameras: list) -> int or None:
+def camera_index_from_mosaic_point(x: int, y: int, cameras: list) -> int | None:
     """Get camera index from mosaic touch point."""
     if not cameras:
         return None
@@ -92,11 +117,11 @@ def camera_index_from_mosaic_point(x: int, y: int, cameras: list) -> int or None
 
 class TouchManager:
     """Manages touch events for camera UI."""
-    
-    def __init__(self):
-        self.max_camera = None
-        self.init_point_touch = None
-        #self.led_on = False  # For ESP32 LED toggle state   
+
+    def __init__(self, max_camera=None, init_point_touch=None):
+        self.max_camera = max_camera
+        self.init_point_touch = init_point_touch
+        self.pending_light_toggle = False
 
     def handle_double_click(self, x: int, y: int, streams: list):
         """Toggle between mosaic and fullscreen."""
@@ -109,6 +134,31 @@ class TouchManager:
 
         self.max_camera = None
         print("Volviendo al mosaico")
+
+    def handle_light_button(self, event: int, x: int, y: int) -> bool:
+        """Handle clicks on the ESP32 light button."""
+        if self.max_camera is None or not getattr(self.max_camera, "light_enabled", False):
+            return False
+
+        over_button = point_in_rect(x, y, LIGHT_BUTTON_RECT)
+
+        if event == cv2.EVENT_LBUTTONDBLCLK and over_button:
+            return True
+
+        if event == cv2.EVENT_LBUTTONDOWN and over_button:
+            self.pending_light_toggle = True
+            self.init_point_touch = None
+            return True
+
+        if event == cv2.EVENT_LBUTTONUP and self.pending_light_toggle:
+            self.pending_light_toggle = False
+            if over_button:
+                self.max_camera.toggle_light()
+                state = "encendida" if getattr(self.max_camera, "light_is_on", False) else "apagada"
+                print(f"[{self.max_camera.nombre}] Luz {state}")
+            return True
+
+        return False
 
     def handle_swipe(self, event: int, x: int, y: int):
         """Handle swipe/pan gesture for PTZ control."""
@@ -126,21 +176,20 @@ class TouchManager:
         dy = y - self.init_point_touch[1]
         self.init_point_touch = None
 
-        # Sensitivity: 40px minimum movement to avoid accidental swipes
         if abs(dx) <= 40 and abs(dy) <= 40:
             return
 
-        # Direction (Pan/Tilt). dy is inverted for screen coordinates.
         mov_x = 15 if dx > 40 else -15 if dx < -40 else 0
         mov_y = 15 if dy < -40 else -15 if dy > 40 else 0
         self.max_camera.move(mov_x, mov_y)
 
     def touch_callback(self, event: int, x: int, y: int, flags: int, param: dict):
         """OpenCV mouse callback for touch events."""
-        # 1. DOBLE CLICK / TAP: Maximizar o Volver al Mosaico
+        if self.handle_light_button(event, x, y):
+            return
+
         if event == cv2.EVENT_LBUTTONDBLCLK:
             self.handle_double_click(x, y, param["streams"])
             return
 
-        # 2. MOVIMIENTO (Swipe): Control PTZ
         self.handle_swipe(event, x, y)

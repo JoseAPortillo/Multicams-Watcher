@@ -26,6 +26,7 @@ class SimulatedCamera:
         self._phase = camera_id * 0.8
         self._ptz_x = 0
         self._ptz_y = 0
+        self._light_on = False
         self.ptz_controller = SimulatedPTZController(enabled=ptz_enabled)
         self._health_messages = []
         self._stream_online = True
@@ -42,6 +43,23 @@ class SimulatedCamera:
             return
         self._ptz_x = max(min(self._ptz_x + x, 90), -90)
         self._ptz_y = max(min(self._ptz_y + y, 90), -90)
+
+    @property
+    def light_enabled(self):
+        return self.tipo.lower() == "esp32"
+
+    @property
+    def light_is_on(self):
+        return self._light_on
+
+    def set_light(self, enabled: bool):
+        if not self.light_enabled:
+            return False
+        self._light_on = bool(enabled)
+        return True
+
+    def toggle_light(self):
+        return self.set_light(not self._light_on)
 
     def _build_frame(self):
         width, height = FRAME_SIZE
@@ -77,6 +95,15 @@ class SimulatedCamera:
             cv2.FONT_HERSHEY_SIMPLEX,
             0.7,
             (230, 230, 230),
+            2,
+        )
+        cv2.putText(
+            frame,
+            f"Light: {'ON' if self.light_is_on else 'OFF'}",
+            (22, height - 84),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (255, 225, 120) if self.light_is_on else (180, 180, 180),
             2,
         )
         cv2.putText(
@@ -125,7 +152,7 @@ def build_simulated_streams(count: int = 3):
         camera = SimulatedCamera(
             camera_id=idx,
             name=f"SimCam {idx + 1}",
-            camera_type="Simulated",
+            camera_type="ESP32" if idx > 0 else "Simulated",
             ptz_enabled=ptz_enabled,
         )
         streams.append(camera.start())

@@ -55,6 +55,7 @@ function updateViewerMeta(camera) {
     <span class="pill">${camera.type}</span>
     <span class="pill">${camera.alarm_enabled ? "Alarma activa" : "Alarma desactivada"}</span>
     <span class="pill">${camera.ptz_enabled ? "PTZ disponible" : "Sin PTZ"}</span>
+    <span class="pill ${camera.light_on ? "light-on" : ""}">${camera.light_enabled ? (camera.light_on ? "Luz encendida" : "Luz apagada") : "Sin luz remota"}</span>
   `;
 }
 
@@ -83,6 +84,7 @@ async function selectCamera(cameraId) {
   const img = document.getElementById("viewer-image");
   const empty = document.getElementById("viewer-empty");
   const toggleAlarmBtn = document.getElementById("toggle-alarm-btn");
+  const toggleLightBtn = document.getElementById("toggle-light-btn");
   const ptzControls = document.getElementById("ptz-controls");
 
   title.textContent = camera.name;
@@ -90,6 +92,10 @@ async function selectCamera(cameraId) {
   empty.hidden = true;
   toggleAlarmBtn.disabled = false;
   toggleAlarmBtn.textContent = camera.alarm_enabled ? "Desactivar alarma" : "Activar alarma";
+  toggleLightBtn.disabled = !camera.light_enabled;
+  toggleLightBtn.classList.toggle("hidden", !camera.light_enabled);
+  toggleLightBtn.classList.toggle("active-light", camera.light_on);
+  toggleLightBtn.textContent = camera.light_on ? "Apagar luz" : "Encender luz";
   ptzControls.classList.toggle("hidden", !camera.ptz_enabled);
 
   updateViewerMeta(camera);
@@ -106,6 +112,12 @@ async function loadCameras() {
       document.getElementById("toggle-alarm-btn").textContent = updated.alarm_enabled
         ? "Desactivar alarma"
         : "Activar alarma";
+      document.getElementById("toggle-light-btn").disabled = !updated.light_enabled;
+      document.getElementById("toggle-light-btn").classList.toggle("hidden", !updated.light_enabled);
+      document.getElementById("toggle-light-btn").classList.toggle("active-light", updated.light_on);
+      document.getElementById("toggle-light-btn").textContent = updated.light_on
+        ? "Apagar luz"
+        : "Encender luz";
       document.getElementById("ptz-controls").classList.toggle("hidden", !updated.ptz_enabled);
       updateViewerMeta(updated);
     }
@@ -117,6 +129,14 @@ async function toggleAlarm() {
     return;
   }
   await fetchJson(`/api/cameras/${state.selectedCameraId}/alarm/toggle`, { method: "POST" });
+  await loadCameras();
+}
+
+async function toggleLight() {
+  if (state.selectedCameraId === null) {
+    return;
+  }
+  await fetchJson(`/api/cameras/${state.selectedCameraId}/light/toggle`, { method: "POST" });
   await loadCameras();
 }
 
@@ -151,6 +171,7 @@ function setupEvents() {
   });
 
   document.getElementById("toggle-alarm-btn").addEventListener("click", toggleAlarm);
+  document.getElementById("toggle-light-btn").addEventListener("click", toggleLight);
 
   document.querySelectorAll("#ptz-controls button").forEach((button) => {
     button.addEventListener("click", async () => {

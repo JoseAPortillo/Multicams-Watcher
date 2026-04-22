@@ -28,6 +28,7 @@ from urllib.parse import urlparse
 
 import cv2
 import mediapipe as mp
+import requests
 import telepot
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
@@ -440,6 +441,69 @@ class TapoController:
             return False
 
 
+class Esp32LightController:
+    """Controls the flashlight LED exposed by the common ESP32-CAM webserver."""
+
+    def __init__(
+        self,
+        camera_name: str,
+        camera_type: str,
+        stream_url: str,
+        request_timeout: float = 2.0,
+        flash_on_value: int = 12,
+    ):
+        self.camera_name = camera_name
+        self.camera_type = str(camera_type).lower()
+        self.request_timeout = request_timeout
+        self.flash_on_value = flash_on_value
+        self.is_on = False
+        self._parsed_url = urlparse(stream_url)
+
+    @property
+    def enabled(self) -> bool:
+        return self.camera_type == "esp32" and bool(self._parsed_url.hostname)
+
+    def _control_urls(self) -> list[str]:
+        if not self.enabled:
+            return []
+
+        scheme = self._parsed_url.scheme or "http"
+        host = self._parsed_url.hostname
+        stream_port = self._parsed_url.port
+
+        urls = [f"{scheme}://{host}/control"]
+        if stream_port and stream_port != 80:
+            urls.append(f"{scheme}://{host}:{stream_port}/control")
+        return urls
+
+    def set_light(self, enabled: bool) -> bool:
+        if not self.enabled:
+            return False
+
+        value = self.flash_on_value if enabled else 0
+        last_error = None
+
+        for control_url in self._control_urls():
+            try:
+                response = requests.get(
+                    control_url,
+                    params={"var": "led_intensity", "val": value},
+                    timeout=self.request_timeout,
+                )
+                if response.ok:
+                    self.is_on = enabled
+                    return True
+            except requests.RequestException as exc:
+                last_error = exc
+
+        if last_error:
+            print(f"[{self.camera_name}] Could not change ESP32 light state: {last_error}")
+        return False
+
+    def toggle(self) -> bool:
+        return self.set_light(not self.is_on)
+
+
 class CameraHealthMonitor:
     """Keeps track of the observable health state of a camera."""
 
@@ -511,6 +575,11 @@ class GestionCamara:
             tapo_user=tapo_user,
             tapo_pass=tapo_pass,
         )
+        self.light_controller = Esp32LightController(
+            camera_name=nombre,
+            camera_type=tipo,
+            stream_url=url,
+        )
         self.health_monitor = CameraHealthMonitor(camera_name=nombre, camera_type=tipo)
 
     @property
@@ -565,8 +634,22 @@ class GestionCamara:
     def last_alert(self):
         return self.alert_service.last_alert
 
+    @property
+    def light_enabled(self):
+        return self.light_controller.enabled
+
+    @property
+    def light_is_on(self):
+        return self.light_controller.is_on
+
     def move(self, x, y):
         self.ptz_controller.move(x, y)
+
+    def set_light(self, enabled: bool):
+        return self.light_controller.set_light(enabled)
+
+    def toggle_light(self):
+        return self.light_controller.toggle()
 
     def start(self):
         self.stream_reader.start()
