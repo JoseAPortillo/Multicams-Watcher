@@ -4,7 +4,7 @@
 
 ```bash
 git clone <URL_DEL_REPOSITORIO>
-cd Control_tplink_c200
+cd Multicams-Watcher
 git checkout feature/web-control-panel
 ```
 
@@ -30,7 +30,7 @@ pip install -r requirements.txt
 
 ## 3. Configurar credenciales
 
-Crea `config/credentials.env` tomando como base [config/credentials_example.env](./Control_tplink_c200/config/credentials_example.env).
+Crea `config/credentials.env` tomando como base [config/credentials_example.env](./Multicams-Watcher/config/credentials_example.env).
 
 Valores minimos:
 
@@ -57,7 +57,7 @@ TAPO_PASS=tu_password_tapo
 
 ## 4. Configurar camaras
 
-Edita [config/cameras_config.json](./Control_tplink_c200/config/cameras_config.json).
+Edita [config/cameras_config.json](./Multicams-Watcher/config/cameras_config.json).
 
 Ejemplo:
 

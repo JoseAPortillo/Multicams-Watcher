@@ -59,7 +59,7 @@ async def lifespan(app: FastAPI):
     shutdown_streams()
 
 
-app = FastAPI(title="Control Tapo C200", lifespan=lifespan)
+app = FastAPI(title="Multicams-Watcher", lifespan=lifespan)
 app.mount("/app", StaticFiles(directory=str(WEBAPP_DIR), html=True), name="webapp")
 
 

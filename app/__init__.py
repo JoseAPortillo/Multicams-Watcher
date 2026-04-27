@@ -1,1 +1,1 @@
-"""Application package for Control Tapo C200."""
+"""Application package for Multicams-Watcher."""

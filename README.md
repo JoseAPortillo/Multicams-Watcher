@@ -1,4 +1,4 @@
-# Control Tapo C200
+# Multicams-Watcher
 
 Proyecto para usar una Raspberry Pi o un PC como centro de control de camaras IP, con panel web ligero para acceder desde movil o tablet.
 
@@ -50,7 +50,7 @@ Clonar el repositorio:
 
 ```bash
 git clone <URL_DEL_REPOSITORIO>
-cd Control_tplink_c200
+cd Multicams-Watcher
 git checkout feature/web-control-panel
 ```
 
@@ -74,7 +74,7 @@ pip install -r requirements.txt
 
 Crear `config/credentials.env` a partir de [config/credentials_example.env](./config/credentials_example.env).
 
-Editar [config/cameras_config.json](./Control_tplink_c200/config/cameras_config.json) con tus camaras.
+Editar [config/cameras_config.json](./Multicams-Watcher/config/cameras_config.json) con tus camaras.
 
 Ejecutar en modo PC:
 
@@ -99,13 +99,13 @@ Mas detalle en [Arranque rapido](docs/arranque-rapido.md) y [Modos de ejecucion]
 
 ## Archivos importantes
 
-- [run_web_server.py](./Control_tplink_c200/run_web_server.py)
-- [app/main/run_web_server.py](./Control_tplink_c200/app/main/run_web_server.py)
-- [app/web/server_api.py](./Control_tplink_c200/app/web/server_api.py)
-- [app/services/video_watcher.py](./Control_tplink_c200/app/services/video_watcher.py)
-- [app/cameras/gestion_camaras.py](./Control_tplink_c200/app/cameras/gestion_camaras.py)
-- [scripts/run_web_server_pc.bat](./Control_tplink_c200/scripts/run_web_server_pc.bat)
-- [scripts/run_video_watcher.bat](./Control_tplink_c200/scripts/run_video_watcher.bat)
+- [run_web_server.py](./Multicams-Watcher/run_web_server.py)
+- [app/main/run_web_server.py](./Multicams-Watcher/app/main/run_web_server.py)
+- [app/web/server_api.py](./Multicams-Watcher/app/web/server_api.py)
+- [app/services/video_watcher.py](./Multicams-Watcher/app/services/video_watcher.py)
+- [app/cameras/gestion_camaras.py](./Multicams-Watcher/app/cameras/gestion_camaras.py)
+- [scripts/run_web_server_pc.bat](./Multicams-Watcher/scripts/run_web_server_pc.bat)
+- [scripts/run_video_watcher.bat](./Multicams-Watcher/scripts/run_video_watcher.bat)
 
 ## Estado actual
 

@@ -3,11 +3,56 @@
 ## Requisitos
 
 - Raspberry Pi 3 o superior
-- Raspberry Pi OS
+- Raspberry Pi OS (versión Lite, recomendado)
 - entorno virtual configurado
 - `config/credentials.env`
 - `config/cameras_config.json`
 - Tailscale instalado si quieres acceso remoto seguro
+
+## Instalación desde GitHub
+
+### 1. Clonar el repositorio
+
+```bash
+cd ~
+git clone https://github.com/tu-usuario/Multicams-Watcher.git
+cd Multicams-Watcher
+```
+
+### 2. Crear entorno virtual
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### 3. Instalar dependencias
+
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+### 4. Configurar credenciales
+
+Copia el archivo de ejemplo y edítalo con tus credenciales:
+
+```bash
+cp config/credentials_example.env config/credentials.env
+nano config/credentials.env
+```
+
+Añade tus credenciales de Telegram y otras configuraciones necesarias.
+
+### 5. Configurar cámaras
+
+Copia y personaliza el archivo de configuración de cámaras:
+
+```bash
+nano config/cameras_config.json
+```
+
+Asegúrate de que las URLs RTSP y credenciales sean correctas para cada cámara.
 
 ## Ejecucion manual
 
@@ -39,8 +84,8 @@ After=network.target
 
 [Service]
 User=pi
-WorkingDirectory=/home/pi/Control_tplink_c200
-ExecStart=/home/pi/Control_tplink_c200/.venv/bin/python /home/pi/Control_tplink_c200/run_web_server.py
+WorkingDirectory=/home/pi/Multicams-Watcher
+ExecStart=/home/pi/Multicams-Watcher/.venv/bin/python /home/pi/Multicams-Watcher/run_web_server.py
 Restart=always
 
 [Install]
