@@ -3,9 +3,9 @@
 ## 1. Clonar el proyecto
 
 ```bash
-git clone <URL_DEL_REPOSITORIO>
+git clone https://github.com/JoseAPortillo/Multicams-Watcher.git
 cd Multicams-Watcher
-git checkout feature/web-control-panel
+git checkout feature/main
 ```
 
 ## 2. Crear el entorno virtual
@@ -96,6 +96,11 @@ En Linux o macOS:
 
 ```bash
 python run_web_server.py --pc-dev
+```
+Alternativa:
+
+```bash
+  ./scripts/run_web_server_rbPi.sh
 ```
 
 El modo `--pc-dev` permite arrancar el panel sin depender de Telegram durante pruebas de escritorio.

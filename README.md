@@ -14,6 +14,8 @@ La rama documentada aqui es:
 - snapshots periodicos
 - activacion y desactivacion de alarma
 - control PTZ en camaras Tapo compatibles
+- switch de led en camaras esp32-cam compatibles.
+- acceso remoto seguro con Tailscale
 
 ## Como leer esta documentacion
 
@@ -34,14 +36,17 @@ Este `README` queda como punto de entrada. El detalle se ha dividido en guias co
 ## Requisitos minimos
 
 - Python 3.11 o superior recomendado
-- `config/credentials.env` configurado
-- `config/cameras_config.json` configurado
-- Camaras y equipo de pruebas en la misma red local
+- `config/credentials.env` configurado para pc.
+- `config/credentials-rbPi.env` configurado para Raspberry Pi.
+- `config/cameras_config.json` configurado.
+- Camaras y equipo de pruebas en la misma red local.
 
 Si vas a desplegar en Raspberry Pi:
 
 - Raspberry Pi 3 o superior
-- Raspberry Pi OS
+- Raspberry Pi OS (Lite recomendado para uso sin interfaz gráfica, pero también 
+  funciona con la versión completa).
+- Instalación de Tailscale si quieres acceso remoto seguro.
 - Cuenta de Tailscale
 
 ## Arranque rapido
@@ -49,9 +54,9 @@ Si vas a desplegar en Raspberry Pi:
 Clonar el repositorio:
 
 ```bash
-git clone <URL_DEL_REPOSITORIO>
+git clone https://github.com/JoseAPortillo/Multicams-Watcher.git
 cd Multicams-Watcher
-git checkout feature/web-control-panel
+git checkout feature/main
 ```
 
 Crear entorno virtual e instalar dependencias:
@@ -107,6 +112,4 @@ Mas detalle en [Arranque rapido](docs/arranque-rapido.md) y [Modos de ejecucion]
 - [scripts/run_web_server_pc.bat](./Multicams-Watcher/scripts/run_web_server_pc.bat)
 - [scripts/run_video_watcher.bat](./Multicams-Watcher/scripts/run_video_watcher.bat)
 
-## Estado actual
 
-La recomendacion de acceso remoto en esta rama es usar `Tailscale` para evitar exponer el puerto web directamente a Internet.
