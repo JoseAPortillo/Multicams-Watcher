@@ -185,11 +185,11 @@ class DetectionService:
 
     def __init__(
         self,
-        skip_frames: int = 4,
-        ia_interval: float = 0.6,
+        skip_frames: int = 2,
+        ia_interval: float = 0.2,
         face_model_path: str = str(FACE_MODEL_FILE),
         pose_model_path: str = str(POSE_MODEL_FILE),
-        min_face_confidence: float = 0.6,
+        min_face_confidence: float = 0.5,
         min_face_size: int = 40,
         history_size: int = 5,
         min_positive_frames: int = 2,
@@ -202,6 +202,7 @@ class DetectionService:
         self.min_face_size = min_face_size
         self.history = deque(maxlen=history_size)
         self.min_positive_frames = min_positive_frames
+        self.last_active_detection = False
 
         base_options_face = python.BaseOptions(model_asset_path=face_model_path)
         options_face = vision.FaceDetectorOptions(
@@ -286,11 +287,11 @@ class DetectionService:
         self.frame_count += 1
 
         if self.frame_count % self.skip_frames != 0:
-            return frame, False
+            return frame, self.last_active_detection
 
         now = time.time()
         if now - self.last_ia_time < self.ia_interval:
-            return frame, False
+            return frame, self.last_active_detection
 
         mp_image = mp.Image(
             image_format=mp.ImageFormat.SRGB,
@@ -302,9 +303,10 @@ class DetectionService:
         pose_result = self.pose_detector.detect(mp_image)
         pose_support = self._has_supporting_pose(pose_result)
 
-        current_detection = len(valid_faces) > 0
+        current_detection = len(valid_faces) > 0 or pose_support
         self.history.append(current_detection)
         active_detection = self._is_persistent_detection()
+        self.last_active_detection = active_detection
 
         for bbox, score in valid_faces:
             cv2.rectangle(
