@@ -185,14 +185,14 @@ class DetectionService:
 
     def __init__(
         self,
-        skip_frames: int = 6,
+        skip_frames: int = 4,
         ia_interval: float = 0.6,
         face_model_path: str = str(FACE_MODEL_FILE),
         pose_model_path: str = str(POSE_MODEL_FILE),
-        min_face_confidence: float = 0.8,
+        min_face_confidence: float = 0.6,
         min_face_size: int = 40,
         history_size: int = 5,
-        min_positive_frames: int = 3,
+        min_positive_frames: int = 2,
     ):
         self.skip_frames = skip_frames
         self.ia_interval = ia_interval
@@ -215,9 +215,9 @@ class DetectionService:
         options_pose = vision.PoseLandmarkerOptions(
             base_options=base_options_pose,
             num_poses=1,
-            min_pose_detection_confidence=0.7,
-            min_pose_presence_confidence=0.7,
-            min_tracking_confidence=0.7,
+            min_pose_detection_confidence=0.6,
+            min_pose_presence_confidence=0.6,
+            min_tracking_confidence=0.6,
         )
         self.pose_detector = vision.PoseLandmarker.create_from_options(options_pose)
 

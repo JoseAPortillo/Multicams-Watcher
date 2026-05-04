@@ -1,35 +1,35 @@
-# Despliegue en Raspberry Pi 3B+ o superior
+# Deployment on Raspberry Pi 3B+ or Newer
 
-## Hardware recomendado
+## Recommended hardware
 
-| Componente | Recomendado | Mínimo |
-|-----------|-------------|--------|
-| Modelo RPi | RPi 4/5 | RPi 3B+ |
+| Component | Recommended | Minimum |
+|-----------|-------------|---------|
+| RPi model | RPi 4/5 | RPi 3B+ |
 | RAM | 4GB+ | 1GB |
-| Tarjeta SD | 64GB+ | 32GB |
-| Conectividad | Ethernet | WiFi |
-| Fuente | 3A+ | 2.5A |
+| SD card | 64GB+ | 32GB |
+| Connectivity | Ethernet | WiFi |
+| Power supply | 3A+ | 2.5A |
 
-## Requisitos de software
+## Software requirements
 
-- **SO**: Raspberry Pi OS (Lite o Desktop)
-- **Python**: 3.9 o superior
-- **Pip**: Actualizado
-- **Git**: Para clonar el repositorio
-- **Conexión a internet**: Para instalación inicial
+- **OS**: Raspberry Pi OS (Lite or Desktop)
+- **Python**: 3.9 or newer
+- **Pip**: Updated
+- **Git**: To clone the repository
+- **Internet connection**: For the initial installation
 
-## Archivos de configuración necesarios
+## Required configuration files
 
-- `config/credentials.env` - Credenciales de cámaras y Telegram
-- `config/cameras_config.json` - Configuración de cámaras
+- `config/credentials.env` - Camera and Telegram credentials
+- `config/cameras_config.json` - Camera configuration
 
-## Acceso remoto (opcional)
+## Remote access (optional)
 
-- **Tailscale** si deseas acceso remoto seguro (ver [Acceso remoto con Tailscale](./4-acceso-remoto-tailscale.md))
+- **Tailscale** if you want secure remote access. See [Remote Access with Tailscale](./acceso-remoto-tailscale.md).
 
-## Instalación desde GitHub
+## Installation from GitHub
 
-### 1. Clonar el repositorio
+### 1. Clone the repository
 
 ```bash
 cd ~
@@ -37,154 +37,159 @@ git clone https://github.com/tu-usuario/Multicams-Watcher.git
 cd Multicams-Watcher
 ```
 
-### 2. Crear entorno virtual
+### 2. Create a virtual environment
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-### 3. Instalar dependencias
+### 3. Install dependencies
 
-**Esta es la parte más larga de la instalación (~30-60 minutos en RPi 3B+)**
+**This is the longest part of the installation, around 30-60 minutes on an RPi 3B+.**
 
 ```bash
 pip install --upgrade pip setuptools wheel
 pip install -r requirements_rbPi.txt
 ```
 
-#### Diferencias: requirements.txt vs requirements_rbPi.txt
+#### Differences: requirements.txt vs requirements_rbPi.txt
 
-| Aspecto | requirements.txt | requirements_rbPi.txt |
-|---------|------------------|-----------------------|
-| Uso recomendado | PC/Desarrollo | Raspberry Pi |
-| OpenCV | opencv-python (GUI completo) | opencv-python (GUI completo) |
-| MediaPipe | v0.10.5 | v0.10.5 (precompilado si es posible) |
-| Tiempo instalación | ~5-10 minutos | ~30-60 minutos* |
-| Espacio ocupado | ~2GB | ~2GB |
+| Aspect | requirements.txt | requirements_rbPi.txt |
+|--------|------------------|-----------------------|
+| Recommended use | PC/Development | Raspberry Pi |
+| OpenCV | opencv-python (full GUI) | opencv-python (full GUI) |
+| MediaPipe | v0.10.5 | v0.10.5 (prebuilt if possible) |
+| Install time | ~5-10 minutes | ~30-60 minutes* |
+| Disk space | ~2GB | ~2GB |
 
-*En RPi 3B+, MediaPipe compila desde fuentes y puede tardar 2-3 horas. Si falla la compilación, usa:
+*On RPi 3B+, MediaPipe may compile from source and can take 2-3 hours. If compilation fails, use:
+
 ```bash
 pip install --index-url https://www.piwheels.org/simple mediapipe
 ```
 
-#### Solución si hay problemas de memoria durante instalación
+#### Fix for memory issues during installation
 
-Si la compilación de MediaPipe falla por falta de memoria:
+If MediaPipe compilation fails because of low memory:
 
 ```bash
-# Crear swap temporal de 2GB
+# Create a temporary 2GB swap file
 sudo fallocate -l 2G /swapfile
 sudo chmod 600 /swapfile
 sudo mkswap /swapfile
 sudo swapon /swapfile
 
-# Reintentar instalación
+# Retry installation
 pip install -r requirements_rbPi.txt
 
-# Eliminar swap después (opcional)
+# Remove swap afterward (optional)
 sudo swapoff /swapfile
 sudo rm /swapfile
 ```
 
-### 4. Configurar credenciales
+### 4. Configure credentials
 
-Copia el archivo de ejemplo y edítalo con tus credenciales:
+Copy the example file and edit it with your credentials:
 
 ```bash
 cp config/credentials_example.env config/credentials.env
 nano config/credentials.env
 ```
 
-Añade tus credenciales de Telegram y otras configuraciones necesarias.
+Add your Telegram credentials and any other required configuration.
 
-### 5. Configurar cámaras
+### 5. Configure cameras
 
-Copia y personaliza el archivo de configuración de cámaras:
+Copy and customize the camera configuration file:
 
 ```bash
 nano config/cameras_config.json
 ```
 
-Asegúrate de que las URLs RTSP y credenciales sean correctas para cada cámara.
+Make sure the RTSP URLs and credentials are correct for each camera.
 
-## Ejecución
+## Running
 
-### Arranque manual
+### Manual startup
 
-Con el entorno virtual activado:
+With the virtual environment activated:
 
 ```bash
 python run_web_server.py
 ```
 
-El servidor escuchará en:
-```
+The server will listen on:
+
+```text
 http://0.0.0.0:8000
 ```
 
-Verás en consola las URLs útiles para acceso local y de red, ejemplo:
-```
+The console will show useful URLs for local and network access, for example:
+
+```text
 Local: http://127.0.0.1:8000/
-Red local: http://192.168.1.X:8000/
+Local network: http://192.168.1.X:8000/
 ```
 
-### Verificación post-instalación
+### Post-installation checks
 
-Antes de dejar corriendo en producción, verifica:
+Before leaving it running in production, verify:
 
 ```bash
-# Ver IP local
+# Show local IP
 hostname -I
 
-# Ver IP de Tailscale (si instalado)
+# Show Tailscale IP (if installed)
 tailscale ip -4
 
-# Ver puertos escuchando
+# Show listening ports
 sudo netstat -tlnp | grep 8000
 ```
 
-## Limitaciones conocidas de RPi 3B+
+## Known limitations on RPi 3B+
 
-⚠️ **Importante conocer antes de desplegar:**
+**Important to know before deploying:**
 
-| Limitación | Impacto | Solución |
-|-----------|--------|----------|
-| Máximo 2-3 streams simultáneos | Video lag con más cámaras | Usar cámaras con resolución menor (720p) |
-| IA lenta | Detección facial tarda 0.5-1 seg/frame | Reducir fps de análisis, no analizar todas las frames |
-| Pocas pestañas web abiertas | Interfaz lenta con >2 navegadores | Usar 1 navegador o Tailscale |
-| Temperatura | RPi se calienta con carga continua | Usar disipador, ventilador si clima cálido |
-| CPU al 100% | Bajo rendimiento general | Monitorear con `htop`, reducir fps |
+| Limitation | Impact | Solution |
+|------------|--------|----------|
+| Maximum 2-3 simultaneous streams | Video lag with more cameras | Use lower-resolution cameras (720p) |
+| Slow AI | Face detection takes 0.5-1 sec/frame | Reduce analysis FPS; do not analyze every frame |
+| Few open browser tabs | Interface slows down with more than 2 browsers | Use 1 browser or Tailscale |
+| Temperature | RPi heats up under continuous load | Use a heatsink and fan in warm environments |
+| CPU at 100% | Poor overall performance | Monitor with `htop`; reduce FPS |
 
-## Performance esperado en RPi 3B+
+## Expected performance on RPi 3B+
 
-**Bajo condiciones normales:**
+**Under normal conditions:**
 
-- **Captura de video**: 20-30 fps por stream
-- **Detección facial**: ~0.5-1 segundo por frame
-- **Interfaz web**: Responsive en red local
-- **Consumo de memoria**: ~300-400 MB (en idle)
-- **Consumo de CPU**: 40-60% (con 2 streams)
+- **Video capture**: 20-30 fps per stream
+- **Face detection**: ~0.5-1 second per frame
+- **Web interface**: Responsive on the local network
+- **Memory usage**: ~300-400 MB when idle
+- **CPU usage**: 40-60% with 2 streams
 
-**Recomendaciones de uso:**
+**Usage recommendations:**
 
-- No más de 2 cámaras simultáneamente
-- Resoluciones máximas: 720p (no 1080p)
-- Análisis de IA: Activar solo cuando sea necesario
-- Mantener SSH abierto para troubleshooting remoto
-- Usar Tailscale para acceso remoto (no exponer puerto 8000)
+- No more than 2 simultaneous cameras
+- Maximum resolution: 720p, not 1080p
+- AI analysis: Enable only when needed
+- Keep SSH available for remote troubleshooting
+- Use Tailscale for remote access; do not expose port 8000
 
-## Arranque automatico opcional con systemd
+## Optional automatic startup with systemd
 
-Crea:
+Create:
 
-`/etc/systemd/system/control-camaras.service`
+```text
+/etc/systemd/system/control-camaras.service
+```
 
-Contenido:
+Content:
 
 ```ini
 [Unit]
-Description=Control de camaras web
+Description=Web camera control
 After=network.target
 
 [Service]
@@ -197,7 +202,7 @@ Restart=always
 WantedBy=multi-user.target
 ```
 
-Luego:
+Then:
 
 ```bash
 sudo systemctl daemon-reload
@@ -206,29 +211,29 @@ sudo systemctl start control-camaras.service
 sudo systemctl status control-camaras.service
 ```
 
-## Comandos útiles
+## Useful commands
 
 ```bash
-# Activar entorno virtual
+# Activate virtual environment
 source .venv/bin/activate
 
-# Ver IP local
+# Show local IP
 hostname -I
 
-# Ver IP de Tailscale
+# Show Tailscale IP
 tailscale ip -4
 
-# Monitorear recursos en tiempo real
+# Monitor resources in real time
 htop
 
-# Ver logs del servicio systemd
+# View systemd service logs
 sudo journalctl -u control-camaras.service -f
 
-# Ver estado del servidor
+# Check server status
 curl http://localhost:8000/
 ```
 
-## Problemas comunes
+## Common issues
 
 ### "No module named fastapi"
 
@@ -237,23 +242,23 @@ source .venv/bin/activate
 pip install -r requirements_rbPi.txt
 ```
 
-### Una cámara sale `offline`
+### A camera appears as `offline`
 
-- Verifica IP o URL RTSP de la cámara
-- Revisa usuario y contraseña RTSP en `config/credentials.env`
-- Comprueba conectividad: `ping <ip-camara>`
-- Revisa logs: `sudo journalctl -u control-camaras.service -n 50`
+- Check the camera IP or RTSP URL.
+- Review the RTSP username and password in `config/credentials.env`.
+- Check connectivity: `ping <camera-ip>`.
+- Review logs: `sudo journalctl -u control-camaras.service -n 50`.
 
-### Alto consumo de CPU (>80%)
+### High CPU usage (>80%)
 
 ```bash
-# Ver procesos por CPU
+# Show processes by CPU usage
 htop
 
-# Reducir fps de análisis en cameras_config.json
-# o desactivar análisis de IA temporalmente
+# Reduce analysis FPS in cameras_config.json,
+# or temporarily disable AI analysis
 ```
 
-### MediaPipe no compila en RPi
+### MediaPipe does not compile on RPi
 
-Ver sección de [Instalar dependencias](#instalación-desde-github) punto 3, subsección "Solución si hay problemas de memoria durante instalación".
+See the [Install dependencies](#installation-from-github) section, step 3, subsection "Fix for memory issues during installation".

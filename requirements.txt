@@ -1,18 +1,18 @@
-﻿# Core dependencies - Detección y procesamiento de video
+# Core dependencies - video detection and processing
 mediapipe==0.10.5
 opencv-contrib-python==4.13.0.92
 opencv-python==4.13.0.92
 numpy==2.4.3
 
-# API y servidor web
+# API and web server
 fastapi==0.116.1
 uvicorn==0.35.0
 
-# Control de cámaras y comunicación
+# Camera control and communication
 pytapo==3.4.11
 python-kasa==0.10.2
 telepot==12.7
 requests==2.33.0
 
-# Configuración
+# Configuration
 python-dotenv==1.2.2

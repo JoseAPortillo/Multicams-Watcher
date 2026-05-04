@@ -1,57 +1,56 @@
 # Multicams-Watcher
 
-Proyecto para usar una Raspberry Pi o un PC como centro de control de camaras IP, con panel web ligero para acceder desde movil o tablet.
+Project for using a Raspberry Pi or PC as an IP camera control center, with a lightweight web dashboard accessible from a phone or tablet.
 
-La rama documentada aqui es:
+The documented branch is:
 
 `feature/web-control-panel`
 
-## Que ofrece
+## What it offers
 
-- listado de camaras
-- estado `online` / `offline`
-- vista ampliada por camara
-- snapshots periodicos
-- activacion y desactivacion de alarma
-- control PTZ en camaras Tapo compatibles
-- switch de led en camaras esp32-cam compatibles.
-- acceso remoto seguro con Tailscale
+- camera list
+- `online` / `offline` status
+- expanded view per camera
+- periodic snapshots
+- alarm activation and deactivation
+- PTZ control on compatible Tapo cameras
+- LED switch on compatible ESP32-CAM cameras
+- secure remote access with Tailscale
 
-## Como leer esta documentacion
+## How to read this documentation
 
-Este `README` queda como punto de entrada. El detalle se ha dividido en guias cortas:
+This `README` is the entry point. Details are split into short guides:
 
-- [Arranque rapido](docs/arranque-rapido.md)
-- [Modos de ejecucion](docs/modos-de-ejecucion.md)
-- [Acceso remoto con Tailscale](docs/acceso-remoto-tailscale.md)
-- [Despliegue en Raspberry Pi](docs/raspberry-pi.md)
+- [Quick Start](docs/quick_start.md)
+- [Run Modes](docs/running_modes.md)
+- [Remote Access with Tailscale](docs/access_remote_tailScale.md)
+- [Raspberry Pi Deployment](docs/raspberry-pi.md)
 
-## Flujo recomendado
+## Recommended flow
 
-1. Probar primero en PC
-2. Validar acceso desde movil o tablet
-3. Ajustar configuracion
-4. Desplegar en Raspberry Pi
+1. Test on PC first.
+2. Validate access from a phone or tablet.
+3. Adjust configuration.
+4. Deploy on Raspberry Pi.
 
-## Requisitos minimos
+## Minimum requirements
 
-- Python 3.11 o superior recomendado
-- `config/credentials.env` configurado para pc.
-- `config/credentials-rbPi.env` configurado para Raspberry Pi.
-- `config/cameras_config.json` configurado.
-- Camaras y equipo de pruebas en la misma red local.
+- Python 3.11 or newer recommended
+- `config/credentials.env` configured for PC
+- `config/credentials-rbPi.env` configured for Raspberry Pi
+- `config/cameras_config.json` configured
+- Cameras and test device on the same local network
 
-Si vas a desplegar en Raspberry Pi:
+If you are deploying on Raspberry Pi:
 
-- Raspberry Pi 3 o superior
-- Raspberry Pi OS (Lite recomendado para uso sin interfaz gráfica, pero también 
-  funciona con la versión completa).
-- Instalación de Tailscale si quieres acceso remoto seguro.
-- Cuenta de Tailscale
+- Raspberry Pi 3 or newer
+- Raspberry Pi OS (Lite recommended for headless use, though the full version also works)
+- Tailscale installed if you want secure remote access
+- Tailscale account
 
-## Arranque rapido
+## Quick start
 
-Clonar el repositorio:
+Clone the repository:
 
 ```bash
 git clone https://github.com/JoseAPortillo/Multicams-Watcher.git
@@ -59,7 +58,7 @@ cd Multicams-Watcher
 git checkout feature/main
 ```
 
-Crear entorno virtual e instalar dependencias:
+Create a virtual environment and install dependencies:
 
 ```bash
 python3 -m venv .venv
@@ -68,7 +67,7 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-En Windows PowerShell:
+On Windows PowerShell:
 
 ```powershell
 py -m venv .venv
@@ -77,39 +76,37 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Crear `config/credentials.env` a partir de [config/credentials_example.env](./config/credentials_example.env).
+Create `config/credentials.env` from [config/credentials_example.env](./config/credentials_example.env).
 
-Editar [config/cameras_config.json](./Multicams-Watcher/config/cameras_config.json) con tus camaras.
+Edit [config/cameras_config.json](./config/cameras_config.json) with your cameras.
 
-Ejecutar en modo PC:
+Run in PC mode:
 
 ```powershell
 .\.venv\Scripts\python.exe run_web_server.py --pc-dev
 ```
 
-Si quieres probar sin camaras reales:
+If you want to test without real cameras:
 
 ```powershell
 .\.venv\Scripts\python.exe run_web_server.py --pc-dev --simulate --sim-cameras 4
 ```
 
-Mas detalle en [Arranque rapido](docs/arranque-rapido.md) y [Modos de ejecucion](docs/modos-de-ejecucion.md).
+More detail in [Quick Start](docs/quick_start.md) and [Run Modes](docs/running_modes.md).
 
-## Segun lo que quieras hacer
+## Depending on what you want to do
 
-- Quiero levantar la web cuanto antes: [Arranque rapido](docs/arranque-rapido.md)
-- Quiero entender `--pc-dev`, simulacion o modo local sin servidor: [Modos de ejecucion](docs/modos-de-ejecucion.md)
-- Quiero entrar desde fuera de casa: [Acceso remoto con Tailscale](docs/acceso-remoto-tailscale.md)
-- Quiero dejarlo corriendo en Raspberry Pi: [Despliegue en Raspberry Pi](docs/raspberry-pi.md)
+- I want to start the web app as soon as possible: [Quick Start](docs/quick_start.md)
+- I want to understand `--pc-dev`, simulation, or local mode without a server: [Run Modes](docs/running_modes.md)
+- I want to access it from outside my home: [Remote Access with Tailscale](docs/access_remote_tailScale.md)
+- I want to leave it running on Raspberry Pi: [Raspberry Pi Deployment](docs/raspberry-pi.md)
 
-## Archivos importantes
+## Important files
 
-- [run_web_server.py](./Multicams-Watcher/run_web_server.py)
-- [app/main/run_web_server.py](./Multicams-Watcher/app/main/run_web_server.py)
-- [app/web/server_api.py](./Multicams-Watcher/app/web/server_api.py)
-- [app/services/video_watcher.py](./Multicams-Watcher/app/services/video_watcher.py)
-- [app/cameras/gestion_camaras.py](./Multicams-Watcher/app/cameras/gestion_camaras.py)
-- [scripts/run_web_server_pc.bat](./Multicams-Watcher/scripts/run_web_server_pc.bat)
-- [scripts/run_video_watcher.bat](./Multicams-Watcher/scripts/run_video_watcher.bat)
-
-
+- [run_web_server.py](./run_web_server.py)
+- [app/main/run_web_server.py](./app/main/run_web_server.py)
+- [app/web/server_api.py](./app/web/server_api.py)
+- [app/services/video_watcher.py](./app/services/video_watcher.py)
+- [app/cameras/gestion_camaras.py](./app/cameras/gestion_camaras.py)
+- [scripts/run_web_server_pc.bat](./scripts/run_web_server_pc.bat)
+- [scripts/run_video_watcher.bat](./scripts/run_video_watcher.bat)

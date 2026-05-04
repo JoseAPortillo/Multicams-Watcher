@@ -1,51 +1,51 @@
-# Requisitos optimizados para Raspberry Pi 3B+ o superior
-# Versiones compiladas y ligeras para ARM (ARMv7l/ARMv8l)
+# Optimized requirements for Raspberry Pi 3B+ or newer
+# Compiled and lightweight versions for ARM (ARMv7l/ARMv8l)
 
-# Core dependencies - Detección y procesamiento de video
-# opencv-python: versión completa con soporte GUI por si es necesario en el futuro
+# Core dependencies - video detection and processing
+# opencv-python: full version with GUI support in case it is needed in the future
 opencv-python==4.13.0.92
 numpy==2.4.3
 
-# MediaPipe para IA (detección facial/pose)
-# Nota: Compilar desde fuentes en RPi puede tardar 2-3 horas
-# Alternativa: Usar pre-compiladas desde piwheels.org si están disponibles
+# MediaPipe for AI (face/pose detection)
+# Note: Compiling from source on RPi can take 2-3 hours
+# Alternative: Use prebuilt packages from piwheels.org if available
 mediapipe==0.10.5
 
-# API y servidor web (muy ligeros)
+# API and web server (very lightweight)
 fastapi==0.116.1
 uvicorn==0.35.0
 
-# Control de cámaras y comunicación
+# Camera control and communication
 pytapo==3.4.11
 python-kasa==0.10.2
 telepot==12.7
 requests==2.33.0
 
-# Configuración
+# Configuration
 python-dotenv==1.2.2
 
-# Notas de instalación para Raspberry Pi:
-# 1. Asegurar que el sistema está actualizado:
+# Raspberry Pi installation notes:
+# 1. Make sure the system is up to date:
 #    sudo apt-get update && sudo apt-get upgrade
 #
-# 2. Instalar dependencias del sistema:
+# 2. Install system dependencies:
 #    sudo apt-get install python3-pip python3-dev libatlas-base-dev libjasper-dev libharfbuzz0b libwebp6 libtiff5
 #    sudo apt-get install libopenjp2-7 libjasper1 libharfbuzz0b libwebp6 libopenjp2-7 libtiff5 libjasper1 libharfbuzz0b libwebp6
 #
-# 3. Crear venv:
+# 3. Create venv:
 #    python3 -m venv .venv_pi
 #    source .venv_pi/bin/activate
 #
-# 4. Actualizar pip y setuptools:
+# 4. Update pip and setuptools:
 #    pip install --upgrade pip setuptools wheel
 #
-# 5. Instalar requisitos (esto puede tardar 30-60 minutos en RPi 3B+):
+# 5. Install requirements (this can take 30-60 minutes on an RPi 3B+):
 #    pip install -r requirements_rbPi.txt
 #
-# 6. Si mediapipe falla, instalar pre-compilado:
+# 6. If mediapipe fails, install the prebuilt package:
 #    pip install --index-url https://www.piwheels.org/simple mediapipe
 #
-# 7. Alternativa si problemas de memoria: usar swap temporal
+# 7. Alternative for memory issues: use temporary swap
 #    sudo fallocate -l 2G /swapfile
 #    sudo chmod 600 /swapfile
 #    sudo mkswap /swapfile

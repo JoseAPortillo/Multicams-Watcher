@@ -1,26 +1,26 @@
-# Configuracion de ESP32-CAM
+# ESP32-CAM Configuration
 
-Guia especifica para cablear, programar y conectar una ESP32-CAM AI Thinker al router WiFi.
+Specific guide for wiring, flashing, and connecting an ESP32-CAM AI Thinker to your WiFi router.
 
-Cuando este funcionando, la camara publicara el video en:
+When it is working, the camera will publish the video at:
 
 ```text
-http://IP_ASIGNADA:81/stream
+http://ASSIGNED_IP:81/stream
 ```
 
-Esa es la URL que se usa despues en `config/cameras_config.json`. La configuracion general de la app esta en `docs/arranque-rapido.md`.
+That is the URL later used in `config/cameras_config.json`. The general app configuration is in `docs/arranque-rapido.md`.
 
-## Material
+## Materials
 
 - ESP32-CAM AI Thinker.
-- Adaptador USB-TTL FTDI, CH340, CP2102 o similar.
-- Cables Dupont.
-- Fuente estable de 5 V.
-- Arduino IDE con soporte para placas ESP32.
+- USB-TTL adapter: FTDI, CH340, CP2102, or similar.
+- Dupont wires.
+- Stable 5 V power supply.
+- Arduino IDE with ESP32 board support.
 
-## Cableado para programar
+## Wiring for flashing
 
-`GPIO0` debe ir a `GND` solo mientras se graba el firmware.
+`GPIO0` must be connected to `GND` only while flashing the firmware.
 
 ```text
           USB-TTL / FTDI                    ESP32-CAM AI Thinker
@@ -35,26 +35,26 @@ Esa es la URL que se usa despues en `config/cameras_config.json`. La configuraci
                                            |    +---------------->| GND
                                            +----------------------+
 
-                         GPIO0 a GND solo para grabar firmware
+                         GPIO0 to GND only while flashing firmware
 ```
 
-Para arrancar en modo camara normal:
+To boot in normal camera mode:
 
 ```text
-ESP32-CAM 5V  -> fuente 5 V
-ESP32-CAM GND -> GND de la fuente
-GPIO0         -> desconectado de GND
+ESP32-CAM 5V  -> 5 V power supply
+ESP32-CAM GND -> power supply GND
+GPIO0         -> disconnected from GND
 ```
 
 ## Arduino IDE
 
-Instala el soporte ESP32 en Arduino IDE usando esta URL en `File > Preferences > Additional boards manager URLs`:
+Install ESP32 support in Arduino IDE using this URL in `File > Preferences > Additional boards manager URLs`:
 
 ```text
 https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
 ```
 
-Selecciona:
+Select:
 
 ```text
 Board: AI Thinker ESP32-CAM
@@ -64,94 +64,94 @@ Partition Scheme: Huge APP
 
 ## Firmware
 
-La forma mas sencilla es usar el ejemplo oficial:
+The easiest option is to use the official example:
 
 ```text
 File > Examples > ESP32 > Camera > CameraWebServer
 ```
 
-En el sketch, deja activo el modelo AI Thinker:
+In the sketch, keep the AI Thinker model enabled:
 
 ```cpp
 #define CAMERA_MODEL_AI_THINKER
 ```
 
-Y configura tu WiFi:
+Then configure your WiFi:
 
 ```cpp
-const char* ssid = "TU_WIFI";
-const char* password = "TU_PASSWORD";
+const char* ssid = "YOUR_WIFI";
+const char* password = "YOUR_PASSWORD";
 ```
 
-El ejemplo `CameraWebServer` ya incluye el servidor HTTP necesario para:
+The `CameraWebServer` example already includes the HTTP server needed for:
 
 ```text
-http://IP_ASIGNADA/
-http://IP_ASIGNADA:81/stream
-http://IP_ASIGNADA/control?var=led_intensity&val=255
-http://IP_ASIGNADA/control?var=led_intensity&val=0
+http://ASSIGNED_IP/
+http://ASSIGNED_IP:81/stream
+http://ASSIGNED_IP/control?var=led_intensity&val=255
+http://ASSIGNED_IP/control?var=led_intensity&val=0
 ```
 
-La app usa `/stream` para el video y `/control` para encender o apagar el LED flash.
+The app uses `/stream` for video and `/control` to turn the flash LED on or off.
 
-## Grabar el firmware
+## Flash the firmware
 
-1. Conecta el cableado de programacion.
-2. Une `GPIO0` con `GND`.
-3. Reinicia la ESP32-CAM con el boton `RST`.
-4. Pulsa `Upload` en Arduino IDE.
-5. Al terminar, desconecta `GPIO0` de `GND`.
-6. Pulsa `RST` otra vez para arrancar en modo normal.
+1. Connect the programming wiring.
+2. Connect `GPIO0` to `GND`.
+3. Reset the ESP32-CAM with the `RST` button.
+4. Press `Upload` in Arduino IDE.
+5. When it finishes, disconnect `GPIO0` from `GND`.
+6. Press `RST` again to boot in normal mode.
 
-Si falla la grabacion, revisa:
+If flashing fails, check:
 
 ```text
-GPIO0 conectado a GND antes de reiniciar
-TX y RX cruzados
-Puerto COM correcto
-Fuente estable de 5 V
-Upload Speed a 115200
+GPIO0 connected to GND before reset
+TX and RX crossed
+Correct COM port
+Stable 5 V power supply
+Upload Speed set to 115200
 ```
 
-## Obtener la IP
+## Get the IP
 
-Abre el monitor serie de Arduino IDE a `115200 baud` y reinicia la ESP32-CAM sin `GPIO0` conectado a `GND`.
+Open the Arduino IDE serial monitor at `115200 baud` and reset the ESP32-CAM without `GPIO0` connected to `GND`.
 
-Deberias ver algo parecido a:
+You should see something like:
 
 ```text
-WiFi conectado
+WiFi connected
 Camera Ready! Use 'http://192.168.1.137' to connect
 ```
 
-La URL para la app sera:
+The URL for the app will be:
 
 ```text
 http://192.168.1.137:81/stream
 ```
 
-Tambien puedes encontrar la IP desde la pagina del router, en la lista de clientes DHCP o dispositivos conectados. Suele aparecer como `espressif`, `ESP32` o similar.
+You can also find the IP from the router page, in the DHCP client list or connected devices list. It usually appears as `espressif`, `ESP32`, or similar.
 
-Conviene reservar esa IP en el router para que no cambie.
+It is useful to reserve that IP in the router so it does not change.
 
-## Prueba rapida
+## Quick test
 
-Con el movil o PC en la misma red WiFi:
-
-```text
-Pagina de control: http://IP_ASIGNADA/
-Stream directo:    http://IP_ASIGNADA:81/stream
-```
-
-Si el stream abre en el navegador, ya puedes copiar esa URL en `config/cameras_config.json` como camara de tipo `ESP32`.
-
-## Funcionamiento
-
-La ESP32-CAM se conecta al router por WiFi y levanta un servidor HTTP interno:
+With your phone or PC on the same WiFi network:
 
 ```text
-Puerto 80 -> pagina de control y comandos
-Puerto 81 -> stream MJPEG
+Control page:  http://ASSIGNED_IP/
+Direct stream: http://ASSIGNED_IP:81/stream
 ```
 
-La app solo necesita la URL del stream. Para el LED flash, envia comandos al endpoint `/control` del firmware oficial.
+If the stream opens in the browser, you can copy that URL into `config/cameras_config.json` as an `ESP32` camera.
+
+## How it works
+
+The ESP32-CAM connects to the router over WiFi and starts an internal HTTP server:
+
+```text
+Port 80 -> control page and commands
+Port 81 -> MJPEG stream
+```
+
+The app only needs the stream URL. For the flash LED, it sends commands to the official firmware's `/control` endpoint.
