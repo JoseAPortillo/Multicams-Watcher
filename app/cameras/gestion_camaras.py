@@ -14,15 +14,14 @@ separating responsibilities without breaking the public interface already used
 by the rest of the project.
 """
 
+import io
 import os
 import re
 import socket
-import tempfile
 import threading
 import time
 from collections import deque
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
 
@@ -126,39 +125,31 @@ class StreamReader:
 
 class TelegramAlertService:
 
-    def __init__(self, token: str, chat_id: str, cooldown: int = 60):
+    def __init__(self, token: str, chat_id: str, cooldown: float = 10):
         self.bot = telepot.Bot(token)
         self.chat_id = chat_id
         self.cooldown = cooldown
         self.last_alert = 0.0
 
     def can_send(self, now: float) -> bool:
-        return now - self.last_alert > self.cooldown
+        return now - self.last_alert >= self.cooldown
 
     def _send_photo_worker(self, camera_name: str, alert_frame):
-        file_path = None
         try:
-            with tempfile.NamedTemporaryFile(
-                prefix=f"alert_{camera_name}_",
-                suffix=".jpg",
-                delete=False,
-                dir=Path.cwd(),
-            ) as tmp:
-                file_path = tmp.name
+            ok, buffer = cv2.imencode(".jpg", alert_frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+            if not ok:
+                raise RuntimeError("Could not encode alert frame")
 
-            cv2.imwrite(file_path, alert_frame)
-            with open(file_path, "rb") as photo:
-                self.bot.sendPhoto(
-                    self.chat_id,
-                    photo,
-                    caption=f"Intruder detected on {camera_name}",
-                )
+            photo = io.BytesIO(buffer.tobytes())
+            photo.name = f"alert_{camera_name}.jpg"
+            self.bot.sendPhoto(
+                self.chat_id,
+                photo,
+                caption=f"Intruder detected on {camera_name}",
+            )
             print(f"[{camera_name}] Photo sent to Telegram.")
         except Exception as exc:
             print(f"Telegram error: {exc}")
-        finally:
-            if file_path and os.path.exists(file_path):
-                os.remove(file_path)
 
     def send_async(self, camera_name: str, alert_frame, now: float):
         if not self.can_send(now):
@@ -185,14 +176,14 @@ class DetectionService:
 
     def __init__(
         self,
-        skip_frames: int = 2,
-        ia_interval: float = 0.2,
+        skip_frames: int = 1,
+        ia_interval: float = 0.1,
         face_model_path: str = str(FACE_MODEL_FILE),
         pose_model_path: str = str(POSE_MODEL_FILE),
         min_face_confidence: float = 0.5,
         min_face_size: int = 40,
         history_size: int = 5,
-        min_positive_frames: int = 2,
+        min_positive_frames: int = 1,
     ):
         self.skip_frames = skip_frames
         self.ia_interval = ia_interval
@@ -556,7 +547,17 @@ class GestionCamara:
     each responsibility to a specialized collaborator.
     """
 
-    def __init__(self, nombre, url, token_tg, chat_id_tg, tipo="Tapo", tapo_user=None, tapo_pass=None):
+    def __init__(
+        self,
+        nombre,
+        url,
+        token_tg,
+        chat_id_tg,
+        tipo="Tapo",
+        tapo_user=None,
+        tapo_pass=None,
+        alert_cooldown: float = 10,
+    ):
         self.nombre = nombre
         self.url = url
         self.tipo = tipo
@@ -566,7 +567,7 @@ class GestionCamara:
 
         self.stream_reader = StreamReader(url)
         if token_tg and chat_id_tg:
-            self.alert_service = TelegramAlertService(token_tg, chat_id_tg)
+            self.alert_service = TelegramAlertService(token_tg, chat_id_tg, cooldown=alert_cooldown)
         else:
             self.alert_service = NullTelegramAlertService()
         self.detection_service = DetectionService()

@@ -44,6 +44,15 @@ def resolve_camera_url(cam: Dict[str, Any], env_values: Dict[str, str]) -> str:
         raise ValueError(f"Camera '{cam.get('name', 'unknown')}' has no URL or URL template")
 
 
+def resolve_alert_cooldown(cam: Dict[str, Any], env_values: Dict[str, str]) -> float:
+    """Resolve the Telegram alert cooldown in seconds."""
+    raw_value = cam.get("alert_cooldown_seconds", env_values.get("ALERT_COOLDOWN_SECONDS", 10))
+    try:
+        return max(0.0, float(raw_value))
+    except (TypeError, ValueError):
+        return 10.0
+
+
 def make_camera_stream(cam: Dict[str, Any], token_tg: str, chat_id_tg: str, 
                       env_values: Dict[str, str], GestionCamara_class,
                       tapo_user: str = None, tapo_pass: str = None):
@@ -64,6 +73,7 @@ def make_camera_stream(cam: Dict[str, Any], token_tg: str, chat_id_tg: str,
     """
     url = resolve_camera_url(cam, env_values)
     camera_type = cam.get("type", "tapo")
+    alert_cooldown = resolve_alert_cooldown(cam, env_values)
     
     return GestionCamara_class(
         cam["name"],
@@ -73,4 +83,5 @@ def make_camera_stream(cam: Dict[str, Any], token_tg: str, chat_id_tg: str,
         tipo=camera_type,
         tapo_user=tapo_user,
         tapo_pass=tapo_pass,
+        alert_cooldown=alert_cooldown,
     ).start()

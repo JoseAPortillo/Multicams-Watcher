@@ -51,6 +51,7 @@ RTSP_USER=your_user
 RTSP_PASS=your_password
 TOKEN_TG=your_telegram_token
 CHAT_ID_TG=your_chat_id
+ALERT_COOLDOWN_SECONDS=10
 TAPO_USER=your_tapo_user
 TAPO_PASS=your_tapo_password
 ```
@@ -67,6 +68,7 @@ Example:
     {
       "name": "Living Room",
       "type": "Tapo",
+      "alert_cooldown_seconds": 10,
       "url_template": "rtsp://{RTSP_USER}:{RTSP_PASS}@192.168.1.153:554/stream2"
     },
     {

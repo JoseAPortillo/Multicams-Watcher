@@ -13,6 +13,7 @@
       {
       "name": "pasillo",
       "type": "ESP32",
+      "alert_cooldown_seconds": 10,
       "url": "http://192.168.1.144:81/stream"
     }
   ]

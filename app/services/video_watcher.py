@@ -41,6 +41,7 @@ def load_credentials(env_path: Path, require_telegram: bool = True, require_rtsp
     values.setdefault("RTSP_PASS", "")
     values.setdefault("TOKEN_TG", "")
     values.setdefault("CHAT_ID_TG", "")
+    values.setdefault("ALERT_COOLDOWN_SECONDS", "10")
     return values
 
 
@@ -51,6 +52,7 @@ def build_streams(env_vars: dict, simulate: bool = False, simulated_count: int =
     camera_env_values = {
         "RTSP_USER": env_vars["RTSP_USER"],
         "RTSP_PASS": env_vars["RTSP_PASS"],
+        "ALERT_COOLDOWN_SECONDS": env_vars["ALERT_COOLDOWN_SECONDS"],
     }
 
     cameras = camera_config.load_camera_config(CAMERAS_CONFIG_FILE)["cameras"]
