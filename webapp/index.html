@@ -19,7 +19,10 @@
     <section class="panel">
       <div class="panel-heading">
         <h2>Camaras</h2>
-        <button id="refresh-btn" class="secondary">Actualizar</button>
+        <div class="panel-actions">
+          <button id="add-camera-btn" class="primary">+</button>
+          <button id="refresh-btn" class="secondary">Actualizar</button>
+        </div>
       </div>
       <div id="camera-list" class="camera-grid"></div>
     </section>
@@ -49,6 +52,35 @@
       </div>
     </section>
   </main>
+
+  <div id="add-camera-modal" class="modal hidden" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Configurar camaras</h2>
+        <button id="close-modal-btn" class="close-btn" type="button">&times;</button>
+      </div>
+      <div class="modal-body">
+        <section class="modal-section">
+          <h3>Camaras configuradas</h3>
+          <div id="configured-camera-list" class="configured-camera-list"></div>
+        </section>
+        <section class="modal-section">
+          <h3>Nuevas camaras</h3>
+          <div id="scan-results" class="camera-scan-list"></div>
+        </section>
+        <div id="scan-progress" class="progress-bar hidden">
+          <div class="progress-fill" style="width: 0%"></div>
+          <span>Escaneando red...</span>
+        </div>
+        <div id="scan-warnings" class="warnings hidden"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="scan-btn" class="primary" type="button">Scan</button>
+        <button id="accept-btn" class="primary hidden" type="button">Aceptar</button>
+        <button id="cancel-btn" class="secondary" type="button">Cancelar</button>
+      </div>
+    </div>
+  </div>
 
   <script src="/app/app.js"></script>
 </body>

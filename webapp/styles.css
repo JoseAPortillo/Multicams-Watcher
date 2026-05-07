@@ -220,3 +220,202 @@ button {
     align-items: flex-start;
   }
 }
+
+/* Modal styles */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 90%;
+  max-width: 620px;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h2 {
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.modal-section {
+  margin-bottom: 18px;
+}
+
+.modal-section h3 {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.progress-bar {
+  margin-bottom: 20px;
+  background: var(--panel-2);
+  border-radius: 10px;
+  height: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+
+.progress-bar span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.configured-camera-list,
+.camera-scan-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.configured-camera-item,
+.scan-result-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.configured-camera-item.pending-remove {
+  opacity: 0.55;
+}
+
+.configured-camera-info {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.configured-camera-name {
+  width: fit-content;
+  max-width: 100%;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  font-weight: 700;
+  text-align: left;
+}
+
+.configured-camera-name:hover {
+  color: var(--accent);
+}
+
+.configured-camera-meta {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.rename-input {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: rgba(10, 16, 22, 0.9);
+  color: var(--text);
+  padding: 8px 10px;
+  font: inherit;
+}
+
+.round-checkbox {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.round-checkbox:checked {
+  border-color: var(--accent);
+  background: radial-gradient(circle, var(--accent) 0 42%, transparent 46%);
+}
+
+.configured-camera-item .round-checkbox:checked {
+  border-color: var(--danger);
+  background: radial-gradient(circle, var(--danger) 0 42%, transparent 46%);
+}
+
+.empty-note {
+  margin: 0;
+  color: var(--muted);
+}
+
+.configured-camera-item:last-child,
+.scan-result-item:last-child {
+  border-bottom: none;
+}
+
+.warnings {
+  margin-top: 20px;
+  padding: 10px;
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid var(--danger);
+  border-radius: 10px;
+  color: var(--danger);
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.panel-actions {
+  display: flex;
+  gap: 10px;
+}

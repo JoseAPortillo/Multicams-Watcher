@@ -2,6 +2,11 @@ const state = {
   cameras: [],
   selectedCameraId: null,
   snapshotTimer: null,
+  configuredCameras: [],
+  scanResults: [],
+  selectedForAdd: new Set(),
+  selectedForRemove: new Set(),
+  renamedCameras: new Map(),
 };
 
 function cameraSnapshotUrl(cameraId) {
@@ -120,6 +125,11 @@ async function loadCameras() {
         : "Encender luz";
       document.getElementById("ptz-controls").classList.toggle("hidden", !updated.ptz_enabled);
       updateViewerMeta(updated);
+    } else {
+      state.selectedCameraId = state.cameras.length > 0 ? state.cameras[0].id : null;
+      if (state.selectedCameraId !== null) {
+        await selectCamera(state.selectedCameraId);
+      }
     }
   }
 }
@@ -164,10 +174,256 @@ async function moveCamera(direction) {
   );
 }
 
+async function showModal() {
+  const modal = document.getElementById("add-camera-modal");
+  modal.classList.remove("hidden");
+  modal.style.display = "flex";
+  resetModal();
+  try {
+    await loadConfiguredCameras();
+  } catch (error) {
+    document.getElementById("scan-warnings").classList.remove("hidden");
+    document.getElementById("scan-warnings").innerHTML = `<p>Error al cargar la configuracion: ${error.message}</p>`;
+  }
+}
+
+function hideModal() {
+  const modal = document.getElementById("add-camera-modal");
+  modal.classList.add("hidden");
+  modal.style.display = "none";
+  resetModal();
+}
+
+function resetModal() {
+  state.configuredCameras = [];
+  state.scanResults = [];
+  state.selectedForAdd.clear();
+  state.selectedForRemove.clear();
+  state.renamedCameras.clear();
+  document.getElementById("scan-progress").classList.add("hidden");
+  document.getElementById("configured-camera-list").innerHTML = "";
+  document.getElementById("scan-results").innerHTML = "";
+  document.getElementById("scan-warnings").classList.add("hidden");
+  document.getElementById("scan-warnings").innerHTML = "";
+  document.getElementById("scan-btn").classList.remove("hidden");
+  document.getElementById("accept-btn").classList.remove("hidden");
+}
+
+async function loadConfiguredCameras() {
+  const result = await fetchJson("/api/camera-config");
+  state.configuredCameras = result.cameras;
+  renderConfiguredCameras();
+}
+
+function renderConfiguredCameras() {
+  const container = document.getElementById("configured-camera-list");
+  container.innerHTML = "";
+
+  if (state.configuredCameras.length === 0) {
+    container.innerHTML = "<p class=\"empty-note\">No hay camaras configuradas.</p>";
+    return;
+  }
+
+  state.configuredCameras.forEach((camera) => {
+    const row = document.createElement("div");
+    row.className = "configured-camera-item";
+    if (state.selectedForRemove.has(camera.id)) {
+      row.classList.add("pending-remove");
+    }
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "round-checkbox";
+    checkbox.id = `configured-cam-${camera.id}`;
+    checkbox.checked = state.selectedForRemove.has(camera.id);
+    checkbox.title = "Marcar para quitar";
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) {
+        state.selectedForRemove.add(camera.id);
+      } else {
+        state.selectedForRemove.delete(camera.id);
+      }
+      renderConfiguredCameras();
+    });
+
+    const info = document.createElement("div");
+    info.className = "configured-camera-info";
+
+    const nameButton = document.createElement("button");
+    nameButton.type = "button";
+    nameButton.className = "configured-camera-name";
+    nameButton.textContent = state.renamedCameras.get(camera.id) || camera.name;
+    nameButton.addEventListener("click", () => showRenameInput(camera, info));
+
+    const meta = document.createElement("span");
+    meta.className = "configured-camera-meta";
+    meta.textContent = `${camera.type}${camera.ip ? ` - ${camera.ip}` : ""}`;
+
+    info.appendChild(nameButton);
+    info.appendChild(meta);
+    row.appendChild(checkbox);
+    row.appendChild(info);
+    container.appendChild(row);
+  });
+}
+
+function showRenameInput(camera, container) {
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "rename-input";
+  input.value = state.renamedCameras.get(camera.id) || camera.name;
+  let cancelled = false;
+
+  const commit = () => {
+    if (cancelled) {
+      return;
+    }
+    const nextName = input.value.trim();
+    if (nextName && nextName !== camera.name) {
+      state.renamedCameras.set(camera.id, nextName);
+    } else {
+      state.renamedCameras.delete(camera.id);
+    }
+    renderConfiguredCameras();
+  };
+
+  input.addEventListener("blur", commit);
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      input.blur();
+    }
+    if (event.key === "Escape") {
+      cancelled = true;
+      state.renamedCameras.delete(camera.id);
+      renderConfiguredCameras();
+    }
+  });
+
+  container.replaceChildren(input);
+  input.focus();
+  input.select();
+}
+
+function updateProgress(progress) {
+  const fill = document.querySelector(".progress-fill");
+  const span = document.querySelector("#scan-progress span");
+  fill.style.width = `${progress * 100}%`;
+  span.textContent = `Escaneando red... ${Math.round(progress * 100)}%`;
+}
+
+async function scanNetwork() {
+  document.getElementById("scan-progress").classList.remove("hidden");
+  document.getElementById("scan-btn").classList.add("hidden");
+  document.getElementById("scan-warnings").classList.add("hidden");
+  document.getElementById("scan-results").innerHTML = "";
+
+  try {
+    const result = await fetchJson("/api/scan-cameras");
+    state.scanResults = result.cameras;
+    renderScanResults();
+  } catch (error) {
+    document.getElementById("scan-warnings").classList.remove("hidden");
+    document.getElementById("scan-warnings").innerHTML = `<p>Error durante el escaneo: ${error.message}</p>`;
+    document.getElementById("scan-btn").classList.remove("hidden");
+  } finally {
+    document.getElementById("scan-progress").classList.add("hidden");
+  }
+}
+
+function renderScanResults() {
+  const container = document.getElementById("scan-results");
+  container.innerHTML = "";
+
+  if (state.scanResults.length === 0) {
+    container.innerHTML = "<p class=\"empty-note\">No se detectaron camaras nuevas.</p>";
+    return;
+  }
+
+  state.scanResults.forEach((cam, index) => {
+    const div = document.createElement("div");
+    div.className = "scan-result-item";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "round-checkbox";
+    checkbox.id = `cam-${index}`;
+    checkbox.checked = state.selectedForAdd.has(index);
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) {
+        state.selectedForAdd.add(index);
+      } else {
+        state.selectedForAdd.delete(index);
+      }
+    });
+
+    const label = document.createElement("label");
+    label.htmlFor = `cam-${index}`;
+    label.innerHTML = `${cam.type} en ${cam.ip}`;
+
+    div.appendChild(checkbox);
+    div.appendChild(label);
+    container.appendChild(div);
+  });
+}
+
+async function acceptSelection() {
+  const toAdd = Array.from(state.selectedForAdd).map(idx => state.scanResults[idx]);
+  const toRemove = Array.from(state.selectedForRemove)
+    .map(id => state.configuredCameras.find(camera => camera.id === id))
+    .filter(Boolean);
+  const toRename = Array.from(state.renamedCameras.entries()).map(([id, name]) => ({ id, name }));
+
+  if (toAdd.length === 0 && toRemove.length === 0 && toRename.length === 0) {
+    hideModal();
+    return;
+  }
+
+  try {
+    const payload = {};
+    if (toAdd.length > 0) {
+      payload.add = toAdd;
+    }
+    if (toRemove.length > 0) {
+      payload.remove = toRemove;
+    }
+    if (toRename.length > 0) {
+      payload.rename = toRename;
+    }
+
+    await fetchJson("/api/update-cameras", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    alert("Configuracion actualizada.");
+    hideModal();
+    await loadCameras();
+    await loadHealth();
+  } catch (error) {
+    alert(`Error al actualizar: ${error.message}`);
+  }
+}
+
 function setupEvents() {
   document.getElementById("refresh-btn").addEventListener("click", async () => {
     await loadHealth();
     await loadCameras();
+  });
+
+  document.getElementById("add-camera-btn").addEventListener("click", showModal);
+  document.getElementById("close-modal-btn").addEventListener("click", hideModal);
+  document.getElementById("cancel-btn").addEventListener("click", hideModal);
+  document.getElementById("scan-btn").addEventListener("click", scanNetwork);
+  document.getElementById("accept-btn").addEventListener("click", acceptSelection);
+
+  const modalOverlay = document.getElementById("add-camera-modal");
+  const modalContent = modalOverlay.querySelector(".modal-content");
+  modalOverlay.addEventListener("click", hideModal);
+  modalContent.addEventListener("click", (event) => event.stopPropagation());
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      hideModal();
+    }
   });
 
   document.getElementById("toggle-alarm-btn").addEventListener("click", toggleAlarm);
@@ -182,6 +438,7 @@ function setupEvents() {
 
 async function init() {
   setupEvents();
+  hideModal();
   await loadHealth();
   await loadCameras();
 

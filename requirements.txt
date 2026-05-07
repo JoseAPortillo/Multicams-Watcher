@@ -1,5 +1,5 @@
 # Core dependencies - video detection and processing
-mediapipe==0.10.5
+mediapipe>=0.10.30
 opencv-contrib-python==4.13.0.92
 opencv-python==4.13.0.92
 numpy==2.4.3
