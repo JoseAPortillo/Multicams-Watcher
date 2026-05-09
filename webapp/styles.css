@@ -30,6 +30,10 @@ button {
   cursor: pointer;
 }
 
+input {
+  font: inherit;
+}
+
 .topbar {
   display: flex;
   justify-content: space-between;
@@ -120,6 +124,7 @@ button {
   padding: 12px;
   color: var(--text);
   text-align: left;
+  cursor: pointer;
 }
 
 .camera-card.active {
@@ -139,6 +144,54 @@ button {
 
 .camera-name {
   font-weight: 700;
+}
+
+.camera-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 5px;
+  cursor: text;
+}
+
+.camera-field span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.camera-name-input,
+.camera-cooldown-input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(10, 16, 22, 0.72);
+  color: var(--text);
+  padding: 8px 10px;
+}
+
+.camera-name-input:focus,
+.camera-cooldown-input:focus {
+  outline: 2px solid rgba(77, 182, 172, 0.45);
+  border-color: var(--accent);
+}
+
+.camera-meta-row,
+.camera-cooldown-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.camera-cooldown-field {
+  display: grid;
+  grid-template-columns: 1fr 84px auto;
+}
+
+.camera-unit {
+  align-self: end;
+  padding-bottom: 8px;
 }
 
 .camera-type,

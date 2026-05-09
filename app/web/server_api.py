@@ -25,6 +25,7 @@ SIMULATION_MODE = os.getenv("CONTROL_APP_SIMULATE", "").lower() in {"1", "true",
 SIMULATED_CAMERA_COUNT = int(os.getenv("CONTROL_APP_SIM_CAMERA_COUNT", "3"))
 
 CONFIG_PATH = Path(__file__).parent.parent.parent / "config" / "cameras_config.json"
+DEFAULT_ALERT_COOLDOWN_SECONDS = 10
 
 env_vars, streams = bootstrap_system(
     require_telegram=not DEV_DISABLE_TELEGRAM,
@@ -61,7 +62,30 @@ def configured_camera_payload(camera: Dict[str, Any], camera_id: int) -> Dict[st
         "ip": ip,
         "url": camera.get("url"),
         "url_template": camera.get("url_template"),
+        "alert_cooldown_seconds": camera.get("alert_cooldown_seconds", DEFAULT_ALERT_COOLDOWN_SECONDS),
     }
+
+
+def save_camera_config(config: Dict[str, Any]) -> None:
+    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+        json.dump(config, f, indent=2, ensure_ascii=False)
+
+
+def update_runtime_camera_name(camera_id: int, new_name: str) -> None:
+    if camera_id >= len(streams):
+        return
+
+    streams[camera_id].nombre = new_name
+    streams[camera_id].ptz_controller.camera_name = new_name
+    streams[camera_id].light_controller.camera_name = new_name
+    streams[camera_id].health_monitor.camera_name = new_name
+
+
+def update_runtime_camera_alert_cooldown(camera_id: int, alert_cooldown_seconds: float) -> None:
+    if camera_id >= len(streams):
+        return
+
+    streams[camera_id].alert_service.cooldown = alert_cooldown_seconds
 
 
 def configured_ips(cameras_config: List[Dict[str, Any]]) -> set[str]:
@@ -146,6 +170,7 @@ def health():
 
 @app.get("/api/cameras")
 def list_cameras():
+    cameras_config = load_camera_config(str(CONFIG_PATH)).get("cameras", [])
     return [
         {
             "id": idx,
@@ -156,6 +181,9 @@ def list_cameras():
             "ptz_enabled": cam.ptz_controller.enabled,
             "light_enabled": getattr(cam, "light_enabled", False),
             "light_on": getattr(cam, "light_is_on", False),
+            "alert_cooldown_seconds": cameras_config[idx].get("alert_cooldown_seconds", getattr(cam, "cooldown", DEFAULT_ALERT_COOLDOWN_SECONDS))
+            if idx < len(cameras_config)
+            else getattr(cam, "cooldown", DEFAULT_ALERT_COOLDOWN_SECONDS),
         }
         for idx, cam in enumerate(streams)
     ]
@@ -171,6 +199,49 @@ def list_camera_config():
             for idx, camera in enumerate(cameras_config)
         ]
     }
+
+
+@app.patch("/api/camera-config/{camera_id}")
+def update_camera_config(camera_id: int, payload: Dict[str, Any]):
+    """Update editable camera config fields and persist them immediately."""
+    try:
+        config = load_camera_config(str(CONFIG_PATH))
+        cameras_config = config.get("cameras", [])
+        if camera_id < 0 or camera_id >= len(cameras_config):
+            raise HTTPException(status_code=404, detail="Camera not found")
+
+        camera = cameras_config[camera_id]
+        updated_fields = {}
+
+        if "name" in payload:
+            new_name = str(payload.get("name", "")).strip()
+            if not new_name:
+                raise HTTPException(status_code=400, detail="Camera name cannot be empty")
+            camera["name"] = new_name
+            update_runtime_camera_name(camera_id, new_name)
+            updated_fields["name"] = new_name
+
+        if "alert_cooldown_seconds" in payload:
+            try:
+                alert_cooldown_seconds = float(payload.get("alert_cooldown_seconds"))
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail="Alert cooldown must be a number")
+            if alert_cooldown_seconds < 0 or alert_cooldown_seconds > 3600:
+                raise HTTPException(status_code=400, detail="Alert cooldown must be between 0 and 3600 seconds")
+            camera["alert_cooldown_seconds"] = round(alert_cooldown_seconds, 2)
+            update_runtime_camera_alert_cooldown(camera_id, camera["alert_cooldown_seconds"])
+            updated_fields["alert_cooldown_seconds"] = camera["alert_cooldown_seconds"]
+
+        if not updated_fields:
+            raise HTTPException(status_code=400, detail="No editable fields provided")
+
+        config["cameras"] = cameras_config
+        save_camera_config(config)
+        return configured_camera_payload(camera, camera_id)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Update failed: {str(e)}")
 
 
 @app.get("/api/cameras/{camera_id}")
@@ -191,7 +262,7 @@ def get_camera_state(camera_id: int):
 @app.get("/api/cameras/{camera_id}/snapshot.jpg")
 def snapshot(camera_id: int):
     cam = get_camera(camera_id)
-    frame = cam.get_processed_frame(send_alerts=False)
+    frame = cam.get_processed_frame()
     if frame is None:
         raise HTTPException(status_code=503, detail="Camera offline")
 
@@ -273,11 +344,7 @@ def update_cameras(payload: Dict[str, Any]):
             new_name = str(item.get("name", "")).strip()
             if isinstance(camera_id, int) and 0 <= camera_id < len(cameras_config) and new_name:
                 cameras_config[camera_id]["name"] = new_name
-                if camera_id < len(streams):
-                    streams[camera_id].nombre = new_name
-                    streams[camera_id].ptz_controller.camera_name = new_name
-                    streams[camera_id].light_controller.camera_name = new_name
-                    streams[camera_id].health_monitor.camera_name = new_name
+                update_runtime_camera_name(camera_id, new_name)
 
         if cameras_to_remove:
             remove_ids = {
@@ -322,7 +389,8 @@ def update_cameras(payload: Dict[str, Any]):
             if not is_duplicate:
                 new_cam = {
                     "name": f"{cam['type']} {cam['ip']}",
-                    "type": cam["type"]
+                    "type": cam["type"],
+                    "alert_cooldown_seconds": DEFAULT_ALERT_COOLDOWN_SECONDS,
                 }
                 if cam["type"] == "ESP32":
                     new_cam["url"] = cam["url"]
@@ -333,9 +401,7 @@ def update_cameras(payload: Dict[str, Any]):
 
         config["cameras"] = cameras_config
 
-        # Write back
-        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-            json.dump(config, f, indent=2, ensure_ascii=False)
+        save_camera_config(config)
 
         for camera in added_cameras:
             streams.append(make_runtime_stream(camera))

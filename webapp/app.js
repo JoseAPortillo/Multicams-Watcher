@@ -7,6 +7,7 @@ const state = {
   selectedForAdd: new Set(),
   selectedForRemove: new Set(),
   renamedCameras: new Map(),
+  editingCameraField: null,
 };
 
 function cameraSnapshotUrl(cameraId) {
@@ -33,24 +34,117 @@ function renderCameraList() {
   container.innerHTML = "";
 
   state.cameras.forEach((camera) => {
-    const button = document.createElement("button");
-    button.className = "camera-card";
+    const card = document.createElement("article");
+    card.className = "camera-card";
+    card.tabIndex = 0;
     if (camera.id === state.selectedCameraId) {
-      button.classList.add("active");
+      card.classList.add("active");
     }
 
-    button.innerHTML = `
-      <span class="camera-name">${camera.name}</span>
-      <span class="camera-type">${camera.type}</span>
-      <span class="camera-status ${camera.online ? "online" : "offline"}">
-        ${camera.online ? "Online" : "Offline"}
-      </span>
+    card.innerHTML = `
+      <label class="camera-field">
+        <span>Nombre</span>
+        <input class="camera-name-input" type="text" value="${escapeHtml(camera.name)}" data-field="name">
+      </label>
+      <div class="camera-meta-row">
+        <span class="camera-type">${camera.type}</span>
+        <span class="camera-status ${camera.online ? "online" : "offline"}">
+          ${camera.online ? "Online" : "Offline"}
+        </span>
+      </div>
+      <label class="camera-field camera-cooldown-field">
+        <span>Cooldown alerta</span>
+        <input class="camera-cooldown-input" type="number" min="0" max="3600" step="1" value="${camera.alert_cooldown_seconds ?? 10}" data-field="alert_cooldown_seconds">
+        <span class="camera-unit">s</span>
+      </label>
       <img src="${cameraSnapshotUrl(camera.id)}" alt="${camera.name}">
     `;
 
-    button.addEventListener("click", () => selectCamera(camera.id));
-    container.appendChild(button);
+    card.addEventListener("click", () => selectCamera(camera.id));
+    card.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        selectCamera(camera.id);
+      }
+    });
+
+    card.querySelectorAll("input").forEach((input) => {
+      const field = input.dataset.field;
+      input.addEventListener("click", (event) => event.stopPropagation());
+      input.addEventListener("keydown", (event) => {
+        event.stopPropagation();
+        if (event.key === "Enter") {
+          input.blur();
+        }
+      });
+      input.addEventListener("focus", () => {
+        state.editingCameraField = `${camera.id}:${field}`;
+      });
+      input.addEventListener("blur", async () => {
+        state.editingCameraField = null;
+        await saveCameraField(camera, field, input.value);
+      });
+    });
+
+    container.appendChild(card);
   });
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+async function saveCameraField(camera, field, rawValue) {
+  const payload = {};
+
+  if (field === "name") {
+    const name = rawValue.trim();
+    if (!name || name === camera.name) {
+      return;
+    }
+    payload.name = name;
+  }
+
+  if (field === "alert_cooldown_seconds") {
+    const alertCooldownSeconds = Number(rawValue);
+    if (!Number.isFinite(alertCooldownSeconds) || alertCooldownSeconds < 0 || alertCooldownSeconds > 3600) {
+      alert("El cooldown de alerta debe estar entre 0 y 3600 segundos.");
+      renderCameraList();
+      return;
+    }
+    if (Number(camera.alert_cooldown_seconds) === alertCooldownSeconds) {
+      return;
+    }
+    payload.alert_cooldown_seconds = alertCooldownSeconds;
+  }
+
+  try {
+    const updated = await fetchJson(`/api/camera-config/${camera.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const index = state.cameras.findIndex((item) => item.id === camera.id);
+    if (index !== -1) {
+      state.cameras[index] = { ...state.cameras[index], ...updated };
+      Object.assign(camera, updated);
+    }
+
+    if (state.selectedCameraId === camera.id && index !== -1) {
+      document.getElementById("viewer-title").textContent = state.cameras[index].name;
+      updateViewerMeta(state.cameras[index]);
+    }
+
+    renderCameraList();
+  } catch (error) {
+    alert(`Error al guardar la camara: ${error.message}`);
+    await loadCameras();
+  }
 }
 
 function updateViewerMeta(camera) {
@@ -61,6 +155,7 @@ function updateViewerMeta(camera) {
     <span class="pill">${camera.alarm_enabled ? "Alarma activa" : "Alarma desactivada"}</span>
     <span class="pill">${camera.ptz_enabled ? "PTZ disponible" : "Sin PTZ"}</span>
     <span class="pill ${camera.light_on ? "light-on" : ""}">${camera.light_enabled ? (camera.light_on ? "Luz encendida" : "Luz apagada") : "Sin luz remota"}</span>
+    <span class="pill">Cooldown alerta ${camera.alert_cooldown_seconds ?? 10}s</span>
   `;
 }
 
@@ -108,6 +203,10 @@ async function selectCamera(cameraId) {
 }
 
 async function loadCameras() {
+  if (state.editingCameraField) {
+    return;
+  }
+
   state.cameras = await fetchJson("/api/cameras");
   renderCameraList();
 
