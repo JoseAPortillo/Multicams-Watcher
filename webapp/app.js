@@ -43,7 +43,7 @@ function renderCameraList() {
 
     card.innerHTML = `
       <label class="camera-field">
-        <span>Nombre</span>
+        <span>Name</span>
         <input class="camera-name-input" type="text" value="${escapeHtml(camera.name)}" data-field="name">
       </label>
       <div class="camera-meta-row">
@@ -53,7 +53,7 @@ function renderCameraList() {
         </span>
       </div>
       <label class="camera-field camera-cooldown-field">
-        <span>Cooldown alerta</span>
+        <span>Alert cooldown</span>
         <input class="camera-cooldown-input" type="number" min="0" max="3600" step="1" value="${camera.alert_cooldown_seconds ?? 10}" data-field="alert_cooldown_seconds">
         <span class="camera-unit">s</span>
       </label>
@@ -112,7 +112,7 @@ async function saveCameraField(camera, field, rawValue) {
   if (field === "alert_cooldown_seconds") {
     const alertCooldownSeconds = Number(rawValue);
     if (!Number.isFinite(alertCooldownSeconds) || alertCooldownSeconds < 0 || alertCooldownSeconds > 3600) {
-      alert("El cooldown de alerta debe estar entre 0 y 3600 segundos.");
+      alert("Alert cooldown must be between 0 and 3600 seconds.");
       renderCameraList();
       return;
     }
@@ -142,7 +142,7 @@ async function saveCameraField(camera, field, rawValue) {
 
     renderCameraList();
   } catch (error) {
-    alert(`Error al guardar la camara: ${error.message}`);
+    alert(`Error saving camera: ${error.message}`);
     await loadCameras();
   }
 }
@@ -152,10 +152,10 @@ function updateViewerMeta(camera) {
   meta.innerHTML = `
     <span class="pill ${camera.online ? "online" : "offline"}">${camera.online ? "Online" : "Offline"}</span>
     <span class="pill">${camera.type}</span>
-    <span class="pill">${camera.alarm_enabled ? "Alarma activa" : "Alarma desactivada"}</span>
-    <span class="pill">${camera.ptz_enabled ? "PTZ disponible" : "Sin PTZ"}</span>
-    <span class="pill ${camera.light_on ? "light-on" : ""}">${camera.light_enabled ? (camera.light_on ? "Luz encendida" : "Luz apagada") : "Sin luz remota"}</span>
-    <span class="pill">Cooldown alerta ${camera.alert_cooldown_seconds ?? 10}s</span>
+    <span class="pill">${camera.alarm_enabled ? "Alarm active" : "Alarm disabled"}</span>
+    <span class="pill">${camera.ptz_enabled ? "PTZ available" : "No PTZ"}</span>
+    <span class="pill ${camera.light_on ? "light-on" : ""}">${camera.light_enabled ? (camera.light_on ? "Light on" : "Light off") : "No remote light"}</span>
+    <span class="pill">Alert cooldown ${camera.alert_cooldown_seconds ?? 10}s</span>
   `;
 }
 
@@ -191,11 +191,11 @@ async function selectCamera(cameraId) {
   img.hidden = false;
   empty.hidden = true;
   toggleAlarmBtn.disabled = false;
-  toggleAlarmBtn.textContent = camera.alarm_enabled ? "Desactivar alarma" : "Activar alarma";
+  toggleAlarmBtn.textContent = camera.alarm_enabled ? "Disable alarm" : "Enable alarm";
   toggleLightBtn.disabled = !camera.light_enabled;
   toggleLightBtn.classList.toggle("hidden", !camera.light_enabled);
   toggleLightBtn.classList.toggle("active-light", camera.light_on);
-  toggleLightBtn.textContent = camera.light_on ? "Apagar luz" : "Encender luz";
+  toggleLightBtn.textContent = camera.light_on ? "Turn off light" : "Turn on light";
   ptzControls.classList.toggle("hidden", !camera.ptz_enabled);
 
   updateViewerMeta(camera);
@@ -214,14 +214,14 @@ async function loadCameras() {
     const updated = state.cameras.find((cam) => cam.id === state.selectedCameraId);
     if (updated) {
       document.getElementById("toggle-alarm-btn").textContent = updated.alarm_enabled
-        ? "Desactivar alarma"
-        : "Activar alarma";
+        ? "Disable alarm"
+        : "Enable alarm";
       document.getElementById("toggle-light-btn").disabled = !updated.light_enabled;
       document.getElementById("toggle-light-btn").classList.toggle("hidden", !updated.light_enabled);
       document.getElementById("toggle-light-btn").classList.toggle("active-light", updated.light_on);
       document.getElementById("toggle-light-btn").textContent = updated.light_on
-        ? "Apagar luz"
-        : "Encender luz";
+        ? "Turn off light"
+        : "Turn on light";
       document.getElementById("ptz-controls").classList.toggle("hidden", !updated.ptz_enabled);
       updateViewerMeta(updated);
     } else {
@@ -282,7 +282,7 @@ async function showModal() {
     await loadConfiguredCameras();
   } catch (error) {
     document.getElementById("scan-warnings").classList.remove("hidden");
-    document.getElementById("scan-warnings").innerHTML = `<p>Error al cargar la configuracion: ${error.message}</p>`;
+    document.getElementById("scan-warnings").innerHTML = `<p>Error loading configuration: ${error.message}</p>`;
   }
 }
 
@@ -319,7 +319,7 @@ function renderConfiguredCameras() {
   container.innerHTML = "";
 
   if (state.configuredCameras.length === 0) {
-    container.innerHTML = "<p class=\"empty-note\">No hay camaras configuradas.</p>";
+    container.innerHTML = "<p class=\"empty-note\">No configured cameras.</p>";
     return;
   }
 
@@ -335,7 +335,7 @@ function renderConfiguredCameras() {
     checkbox.className = "round-checkbox";
     checkbox.id = `configured-cam-${camera.id}`;
     checkbox.checked = state.selectedForRemove.has(camera.id);
-    checkbox.title = "Marcar para quitar";
+    checkbox.title = "Mark for removal";
     checkbox.addEventListener("change", () => {
       if (checkbox.checked) {
         state.selectedForRemove.add(camera.id);
@@ -407,7 +407,7 @@ function updateProgress(progress) {
   const fill = document.querySelector(".progress-fill");
   const span = document.querySelector("#scan-progress span");
   fill.style.width = `${progress * 100}%`;
-  span.textContent = `Escaneando red... ${Math.round(progress * 100)}%`;
+  span.textContent = `Scanning network... ${Math.round(progress * 100)}%`;
 }
 
 async function scanNetwork() {
@@ -422,7 +422,7 @@ async function scanNetwork() {
     renderScanResults();
   } catch (error) {
     document.getElementById("scan-warnings").classList.remove("hidden");
-    document.getElementById("scan-warnings").innerHTML = `<p>Error durante el escaneo: ${error.message}</p>`;
+    document.getElementById("scan-warnings").innerHTML = `<p>Error during scan: ${error.message}</p>`;
     document.getElementById("scan-btn").classList.remove("hidden");
   } finally {
     document.getElementById("scan-progress").classList.add("hidden");
@@ -434,7 +434,7 @@ function renderScanResults() {
   container.innerHTML = "";
 
   if (state.scanResults.length === 0) {
-    container.innerHTML = "<p class=\"empty-note\">No se detectaron camaras nuevas.</p>";
+    container.innerHTML = "<p class=\"empty-note\">No new cameras detected.</p>";
     return;
   }
 
@@ -457,7 +457,7 @@ function renderScanResults() {
 
     const label = document.createElement("label");
     label.htmlFor = `cam-${index}`;
-    label.innerHTML = `${cam.type} en ${cam.ip}`;
+    label.innerHTML = `${cam.type} at ${cam.ip}`;
 
     div.appendChild(checkbox);
     div.appendChild(label);
@@ -494,12 +494,12 @@ async function acceptSelection() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-    alert("Configuracion actualizada.");
+    alert("Configuration updated.");
     hideModal();
     await loadCameras();
     await loadHealth();
   } catch (error) {
-    alert(`Error al actualizar: ${error.message}`);
+    alert(`Error updating: ${error.message}`);
   }
 }
 

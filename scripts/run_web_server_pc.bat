@@ -4,8 +4,8 @@ setlocal
 cd /d "%~dp0.."
 
 if not exist .venv\Scripts\python.exe (
-    echo No se encontro .venv\Scripts\python.exe
-    echo Crea primero el entorno virtual e instala dependencias.
+    echo .venv\Scripts\python.exe not found
+    echo Create the virtual environment first and install dependencies.
     echo.
     pause
     exit /b 1
@@ -16,6 +16,6 @@ if not exist .venv\Scripts\python.exe (
 set "EXIT_CODE=%ERRORLEVEL%"
 
 echo.
-echo El proceso termino con codigo %EXIT_CODE%.
+echo The process ended with code %EXIT_CODE%.
 pause
 exit /b %EXIT_CODE%

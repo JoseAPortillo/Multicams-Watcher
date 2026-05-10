@@ -1,27 +1,27 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Panel de Camaras</title>
+  <title>Camera Control Panel</title>
   <link rel="stylesheet" href="/app/styles.css">
 </head>
 <body>
   <header class="topbar">
     <div>
       <p class="eyebrow">Raspberry Control Center</p>
-      <h1>Panel de camaras</h1>
+      <h1>Camera control panel</h1>
     </div>
-    <div id="system-health" class="system-health">Cargando...</div>
+    <div id="system-health" class="system-health">Loading...</div>
   </header>
 
   <main class="layout">
     <section class="panel">
       <div class="panel-heading">
-        <h2>Camaras</h2>
+        <h2>Cameras</h2>
         <div class="panel-actions">
           <button id="add-camera-btn" class="primary">+</button>
-          <button id="refresh-btn" class="secondary">Actualizar</button>
+          <button id="refresh-btn" class="secondary">Refresh</button>
         </div>
       </div>
       <div id="camera-list" class="camera-grid"></div>
@@ -29,26 +29,26 @@
 
     <section class="panel viewer">
       <div class="panel-heading">
-        <h2 id="viewer-title">Selecciona una camara</h2>
+        <h2 id="viewer-title">Select a camera</h2>
         <div class="viewer-actions">
-          <button id="toggle-light-btn" class="secondary hidden" disabled>Luz</button>
-          <button id="toggle-alarm-btn" class="secondary" disabled>Alarma</button>
+          <button id="toggle-light-btn" class="secondary hidden" disabled>Light</button>
+          <button id="toggle-alarm-btn" class="secondary" disabled>Alarm</button>
         </div>
       </div>
 
       <div class="viewer-stage">
-        <img id="viewer-image" alt="Vista de camara" hidden>
-        <div id="viewer-empty" class="viewer-empty">Pulsa una camara para verla aqui.</div>
+        <img id="viewer-image" alt="Camera view" hidden>
+        <div id="viewer-empty" class="viewer-empty">Click a camera to view it here.</div>
       </div>
 
       <div id="viewer-meta" class="viewer-meta"></div>
 
       <div id="ptz-controls" class="ptz-grid hidden">
-        <button data-move="up">Arriba</button>
-        <button data-move="left">Izquierda</button>
+        <button data-move="up">Up</button>
+        <button data-move="left">Left</button>
         <button data-move="home" class="secondary">Stop</button>
-        <button data-move="right">Derecha</button>
-        <button data-move="down">Abajo</button>
+        <button data-move="right">Right</button>
+        <button data-move="down">Down</button>
       </div>
     </section>
   </main>
@@ -56,28 +56,28 @@
   <div id="add-camera-modal" class="modal hidden" style="display: none;">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>Configurar camaras</h2>
+        <h2>Configure cameras</h2>
         <button id="close-modal-btn" class="close-btn" type="button">&times;</button>
       </div>
       <div class="modal-body">
         <section class="modal-section">
-          <h3>Camaras configuradas</h3>
+          <h3>Configured cameras</h3>
           <div id="configured-camera-list" class="configured-camera-list"></div>
         </section>
         <section class="modal-section">
-          <h3>Nuevas camaras</h3>
+          <h3>New cameras</h3>
           <div id="scan-results" class="camera-scan-list"></div>
         </section>
         <div id="scan-progress" class="progress-bar hidden">
           <div class="progress-fill" style="width: 0%"></div>
-          <span>Escaneando red...</span>
+          <span>Scanning network...</span>
         </div>
         <div id="scan-warnings" class="warnings hidden"></div>
       </div>
       <div class="modal-footer">
         <button id="scan-btn" class="primary" type="button">Scan</button>
-        <button id="accept-btn" class="primary hidden" type="button">Aceptar</button>
-        <button id="cancel-btn" class="secondary" type="button">Cancelar</button>
+        <button id="accept-btn" class="primary hidden" type="button">Accept</button>
+        <button id="cancel-btn" class="secondary" type="button">Cancel</button>
       </div>
     </div>
   </div>
